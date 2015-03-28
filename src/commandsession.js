@@ -52,10 +52,11 @@ export default class CommandSession {
     // all other signals
     var otherSignals = ObjectUtils.filter( signalConfigs, ( signalMap, signalName ) => signalName !== "input" && signalName !== "output" );
 
-    var execSequence = ( sequence, session, data ) => {
+    // TODO: make execSequence more abstract, take callback
+    var execSequence = ( sequence, session, data, ...restArgs ) => {
       return sequence.reduce( (curr, next) => {
         return curr.then( intermediateResult => {
-          return next( session, intermediateResult );
+          return next( session, intermediateResult, ...restArgs );
         });
       }, Promise.resolve( data ) );
     };
@@ -73,8 +74,8 @@ export default class CommandSession {
     // output transformations
     this.getSignal( "output" ).add( (session, data) => {
 
-        ObjectUtils.forEach( outputConfig, sequence => {
-          execSequence( sequence, this, data )
+        ObjectUtils.forEach( outputConfig, (sequence, datatype) => {
+          execSequence( sequence, this, data, datatype )
             .catch( this.onError.bind( this ) );
         })
 
