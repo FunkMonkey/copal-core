@@ -26,7 +26,7 @@ export default class CommandSession {
     var signalConfigs = ObjectUtils.map( this.commandConfig.signals, (signalMap, signalName) => {
       return ObjectUtils.map( signalMap, ( brickSequence ) => {
         return brickSequence.map( brickID => {
-          var brick = this.bricks.getNormalBrick( brickID );
+          var brick = this.bricks.getDataBrick( brickID );
           if( !brick )
             throw new Error("Brick with ID '" + brickID + "' does not exist!" );
 

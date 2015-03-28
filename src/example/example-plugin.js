@@ -3,10 +3,10 @@ import ExampleCommand from "./example-command";
 
 export default {
   init( copal ) {
-    copal.bricks.addNormalBrick( "Example.getResults", this.getResults.bind(this) );
-    copal.bricks.addNormalBrick( "Example.toURLList", this.toURLList );
-    copal.bricks.addNormalBrick( "Example.itemToUrl", this.itemToUrl );
-    copal.bricks.addNormalBrick( "Example.openUrlInBrowser", this.openUrlInBrowser );
+    copal.bricks.addDataBrick( "Example.getResults", this.getResults.bind(this) );
+    copal.bricks.addDataBrick( "Example.toURLList", this.toURLList );
+    copal.bricks.addDataBrick( "Example.itemToUrl", this.itemToUrl );
+    copal.bricks.addDataBrick( "Example.openUrlInBrowser", this.openUrlInBrowser );
 
     copal.addCommand( "test", ExampleCommand );
   },

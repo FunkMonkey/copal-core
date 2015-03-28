@@ -3,7 +3,8 @@ export default class Bricks {
   constructor() {
     this.inputBricks = {};
     this.outputBricks = {};
-    this.normalBricks = {};
+    this.dataBricks = {};
+    this.errorBricks = {};
   }
 
   addInputBrick( inputDatatype, brickID, brick ) {
@@ -33,15 +34,15 @@ export default class Bricks {
     return this.outputBricks[ datatype ];
   }
 
-  addNormalBrick( brickID, brick ) {
-    if( this.normalBricks[ brickID ] )
+  addDataBrick( brickID, brick ) {
+    if( this.dataBricks[ brickID ] )
       throw new Error("Brick with ID '" + brickID + "' already existing!");
 
-    this.normalBricks[ brickID ] = brick;
+    this.dataBricks[ brickID ] = brick;
   }
 
-  getNormalBrick( brickID ) {
-    return this.normalBricks[ brickID ];
+  getDataBrick( brickID ) {
+    return this.dataBricks[ brickID ];
   }
 
 
