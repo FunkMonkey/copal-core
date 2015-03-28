@@ -35,6 +35,10 @@ export default class CommandSession {
       } );
     } );
 
+    // initialize error handlers
+    this.bricks.getErrorBricks().forEach( brick =>  this.getSignal("error").add( brick ) );
+    
+
     // TODO: don't rely on "standard-query-input"
     var inputConfig = signalConfigs.input["standard-query-input"];
     
@@ -61,7 +65,7 @@ export default class CommandSession {
         execSequence( inputConfig, this, query )
           .then( data => {
             this.getSignal("output").dispatch( this, data )
-          } ).catch( this.onError );
+          } ).catch( this.onError.bind( this ) );
 
       });
 
@@ -70,7 +74,7 @@ export default class CommandSession {
 
         ObjectUtils.forEach( outputConfig, sequence => {
           execSequence( sequence, this, data )
-            .catch( this.onError );
+            .catch( this.onError.bind( this ) );
         })
 
       });
@@ -79,7 +83,7 @@ export default class CommandSession {
     ObjectUtils.forEach( otherSignals, ( signalConfig, signalName ) => {
         this.getSignal( signalName ).add( ( session, dataType, signalData ) => {
           execSequence( signalConfig[dataType], this, signalData)
-            .catch( this.onError );
+            .catch( this.onError.bind( this ) );
         } );
       } );
     
@@ -88,7 +92,8 @@ export default class CommandSession {
   }
 
   onError( error ) {
-    console.log( error.stack );
+    // console.log( error.stack );
+    this.getSignal("error").dispatch( this, error );
   }
 
   execute() {

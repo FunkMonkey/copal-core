@@ -4,7 +4,7 @@ export default class Bricks {
     this.inputBricks = {};
     this.outputBricks = {};
     this.dataBricks = {};
-    this.errorBricks = {};
+    this.errorBricks = [];
   }
 
   addInputBrick( inputDatatype, brickID, brick ) {
@@ -45,6 +45,13 @@ export default class Bricks {
     return this.dataBricks[ brickID ];
   }
 
+  addErrorBrick( brick ) {
+    this.errorBricks.push( brick );
+  }
+
+  getErrorBricks() {
+    return this.errorBricks;
+  }
 
 
 }
