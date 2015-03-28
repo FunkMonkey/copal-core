@@ -1,5 +1,5 @@
 import * as ObjectUtils from "./utils/ObjectUtils";
-import signals from "signals";
+import CurriedSignal from "./utils/curried-signal";
 
 export default class CommandSession {
   constructor(sessionID, commandConfig, bricks ) {
@@ -15,7 +15,8 @@ export default class CommandSession {
 
   getSignal( name ) {
     if( !this._signals[name] )
-      return this._signals[name] = new signals.Signal();
+      // first argument of a signal will always be the command-session
+      return this._signals[name] = new CurriedSignal( this );
     else
       return this._signals[name];
   }
@@ -64,7 +65,7 @@ export default class CommandSession {
         
         execSequence( inputConfig, this, query )
           .then( data => {
-            this.getSignal("output").dispatch( this, data )
+            this.getSignal("output").dispatch( data )
           } ).catch( this.onError.bind( this ) );
 
       });
@@ -93,13 +94,13 @@ export default class CommandSession {
 
   onError( error ) {
     // console.log( error.stack );
-    this.getSignal("error").dispatch( this, error );
+    this.getSignal("error").dispatch( error );
   }
 
   execute() {
     // connecting inputs with this command-session
     this.bricks.getInputBricks("standard-query-input").forEach( input => input( this ) );
-    this.getSignal("input").dispatch( this, this.commandConfig.query );
+    this.getSignal("input").dispatch( this.commandConfig.query );
   }
 
 }
