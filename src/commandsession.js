@@ -6,6 +6,7 @@ export default class CommandSession {
 
     this.sessionID = sessionID;
     this.commandConfig = commandConfig;
+    this.query = commandConfig.query || {};
     this.bricks = bricks;
 
     this._signals = {};
@@ -14,10 +15,11 @@ export default class CommandSession {
   }
 
   getSignal( name ) {
-    if( !this._signals[name] )
+    if( !this._signals[name] ) {
       // first argument of a signal will always be the command-session
-      return this._signals[name] = new CurriedSignal( this );
-    else
+      var signal = this._signals[name] = new CurriedSignal( this );
+      return signal;
+    } else
       return this._signals[name];
   }
 
@@ -37,12 +39,11 @@ export default class CommandSession {
     } );
 
     // initialize error handlers
-    this.bricks.getErrorBricks().forEach( brick =>  this.getSignal("error").add( brick ) );
-    
+    this.bricks.getErrorBricks().forEach( brick => this.getSignal("error").add( brick ) );
 
     // TODO: don't rely on "standard-query-input"
     var inputConfig = signalConfigs.input["standard-query-input"];
-    
+
     // clean outputConfig from non existing output datatype handlers
     var outputConfig = ObjectUtils.filter( signalConfigs.output, ( outputMap, datatype ) => this.bricks.getOutputBricks( datatype ) != null );
     ObjectUtils.forEach( outputConfig, ( outputBricks, datatype ) => {
@@ -88,9 +89,6 @@ export default class CommandSession {
             .catch( this.onError.bind( this ) );
         } );
       } );
-    
-    
-
   }
 
   onError( error ) {
@@ -101,7 +99,7 @@ export default class CommandSession {
   execute() {
     // connecting inputs with this command-session
     this.bricks.getInputBricks("standard-query-input").forEach( input => input( this ) );
-    this.getSignal("input").dispatch( this.commandConfig.query );
+    this.getSignal("input").dispatch( this.query );
   }
 
 }

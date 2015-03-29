@@ -5,7 +5,8 @@
 	},
 	"rules": {
 		"global-strict": false,
-		"curly": [2, "multi"]
+		"curly": false,
+		"no-underscore-dangle": false
 	},
 	"ecmaFeatures": {
 		"arrowFunctions": true,

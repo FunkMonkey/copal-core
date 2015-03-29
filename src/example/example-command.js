@@ -1,5 +1,5 @@
 export default {
-  query: "", // TODO: must be object
+  query: {},
 
   preferredInputs: [],
 

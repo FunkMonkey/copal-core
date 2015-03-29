@@ -14,7 +14,7 @@ export default {
   results: ["Alpha", "Bravo", "Charlie", "Delta"],
 
   getResults ( commandSession, queryData ) {
-    queryData = queryData.toLowerCase();
+    queryData = ( queryData.queryString || "" ).toLowerCase();
     return this.results.filter( res => res.toLowerCase().indexOf(queryData) > -1 );
   },
 
