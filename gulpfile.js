@@ -14,8 +14,8 @@ gulp.task("default", function() {
              .pipe(gulp.dest("build"));
 });
 
-var watcher = gulp.watch('src/**/*.js', ['default']);
+var watcher = gulp.watch("src/**/*.js", ["default"]);
 
-watcher.on('change', function(event) {
-  console.log('File ' + event.path + ' was ' + event.type + ', running tasks...');
+watcher.on("change", function(event) {
+  console.log("File " + event.path + " was " + event.type + ", running tasks...");
 });

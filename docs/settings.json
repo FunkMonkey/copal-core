@@ -1,0 +1,5 @@
+{
+	"extensions": {
+		"enabled": ["extension-1", "extension-2"]
+	}
+}

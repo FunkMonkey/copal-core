@@ -1,5 +1,7 @@
 export default {
-  query: {},
+  name: "Example",
+
+  initialData: {},
 
   preferredInputs: [],
 
@@ -13,7 +15,7 @@ export default {
       "list-title-url-icon": ["Example.toURLList"]
     },
     "listitem-execute": {
-      "listitem-title-url-icon": ["Example.itemToUrl", "Example.openUrlInBrowser"]
+      "listitem-title-url-icon": ["Example.itemToUrl", "Common.open"]
     }
   }
 };

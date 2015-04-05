@@ -2,11 +2,12 @@ import * as ObjectUtils from "./utils/ObjectUtils";
 import CurriedSignal from "./utils/curried-signal";
 
 export default class CommandSession {
+
   constructor(sessionID, commandConfig, bricks ) {
 
     this.sessionID = sessionID;
     this.commandConfig = commandConfig;
-    this.query = commandConfig.query || {};
+    this.initialData = commandConfig.initialData || {};
     this.bricks = bricks;
 
     this._signals = {};
@@ -63,11 +64,11 @@ export default class CommandSession {
     };
 
     // input transformations
-    this.getSignal( "input" ).add( (session, query) => {
-        
-        execSequence( inputConfig, this, query )
+    this.getSignal( "input" ).add( (session, inputData) => {
+
+        execSequence( inputConfig, this, inputData )
           .then( data => {
-            this.getSignal("output").dispatch( data )
+            this.getSignal("output").dispatch( data );
           } ).catch( this.onError.bind( this ) );
 
       });
@@ -78,11 +79,12 @@ export default class CommandSession {
         ObjectUtils.forEach( outputConfig, (sequence, datatype) => {
           execSequence( sequence, this, data, datatype )
             .catch( this.onError.bind( this ) );
-        })
+        });
 
       });
 
     // create signal handlers for all other signals and call their bricks, when signal emitted
+    // TODO: inherited data-types?
     ObjectUtils.forEach( otherSignals, ( signalConfig, signalName ) => {
         this.getSignal( signalName ).add( ( session, dataType, signalData ) => {
           execSequence( signalConfig[dataType], this, signalData)
@@ -99,7 +101,7 @@ export default class CommandSession {
   execute() {
     // connecting inputs with this command-session
     this.bricks.getInputBricks("standard-query-input").forEach( input => input( this ) );
-    this.getSignal("input").dispatch( this.query );
+    this.getSignal("input").dispatch( this.initialData || {} );
   }
 
 }

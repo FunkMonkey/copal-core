@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "main": "build/copal-entry.js",
   "dependencies": {
+    "config-file": "^0.1.8",
+    "lodash": "^3.6.0",
+    "open": "0.0.5",
     "signals": "^1.0.0"
   },
   "devDependencies": {
