@@ -3,5 +3,7 @@ import CoPal from "./copal";
 
 app.on( "ready", () => {
   var copal = new CoPal();
-  copal.init();
+  copal.init().then( () => {
+    copal.executeCommand("commands");
+  } );
 });

@@ -35,11 +35,11 @@ that is piped to output bricks.
 Unlike other productivity applications, CoPal wants to provide more input and output methods than a graphical user interface in the future. 
 Imagine a voice recognition input brick or a synthesized speech output brick. Imagine console based output bricks.
 
-Name
------
+Where does the name come from?
+------------------------------
 
 Whatever you prefer:
 
-- Command-Pal
-- Command-Palette
-- Copal - 
+- That helpful command pal
+- Command-Palette, known from [Sublime Text](http://www.sublimetext.com/) and [Atom](https://atom.io/)
+- Copal as in [tree resin](http://en.wikipedia.org/wiki/Copal) - kinda gluey

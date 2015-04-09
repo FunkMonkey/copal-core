@@ -100,8 +100,12 @@ export default class CommandSession {
 
   execute() {
     // connecting inputs with this command-session
-    this.bricks.getInputBricks("standard-query-input").forEach( input => input( this ) );
-    this.getSignal("input").dispatch( this.initialData || {} );
+    var inputPromises = this.bricks.getInputBricks("standard-query-input").map( input => input( this ) );
+    return Promise.all( inputPromises )
+                  .then( () => {
+                    this.getSignal("input").dispatch( this.initialData || {} );
+                  } )
+                  .catch( this.onError.bind( this ) );
   }
 
 }
