@@ -6,7 +6,6 @@
 import CommandSession from "./commandsession";
 import ExamplePlugin from "./example/example-plugin";
 import Bricks from "./bricks";
-import Launcher from "copal-launcher";
 import path from "path";
 import config from "config-file";
 import _ from "lodash";
