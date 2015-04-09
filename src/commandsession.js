@@ -94,7 +94,6 @@ export default class CommandSession {
   }
 
   onError( error ) {
-    // console.log( error.stack );
     this.getSignal("error").dispatch( error );
   }
 

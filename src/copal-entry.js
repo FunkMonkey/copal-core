@@ -4,6 +4,6 @@ import CoPal from "./copal";
 app.on( "ready", () => {
   var copal = new CoPal();
   copal.init().then( () => {
-    copal.executeCommand("commands");
+    console.log( "CoPal initialized" );
   } );
 });
