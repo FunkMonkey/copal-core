@@ -11,7 +11,7 @@ Design goals
 
 ### Cross-platform
 
-CoPal's graphical user interface ([copal-gui](url)) is based on [atom-shell](https://github.com/atom/atom-shell) and thus solely uses web technologies. If you don't need a graphical user interface, [node.js](https://nodejs.org/) is enough.
+CoPal's graphical user interface ([copal-gui](https://github.com/FunkMonkey/copal-gui)) is based on [atom-shell](https://github.com/atom/atom-shell) and thus solely uses web technologies. If you don't need a graphical user interface, [node.js](https://nodejs.org/) is enough.
 
 ### Component-based and extendable
 
