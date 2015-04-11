@@ -34,8 +34,6 @@ export default class CoPal {
     this.profileDir = defaultProfileDir;
     this.settings = this.loadProfileConfig( "settings.json") || { };
     this.defaultifyOptions( this.settings, DEFAULT_SETTINGS, true );
-    console.log( this.settings );
-
 
     initDefaultBricks( this );
     defaultCommands.forEach( command => this.addCommand( command ) );

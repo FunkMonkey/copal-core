@@ -64,9 +64,9 @@ export default class CommandSession {
     };
 
     // input transformations
-    this.getSignal( "input" ).add( (session, inputData) => {
+    this.getSignal( "input" ).add( (session, inputData, metaData) => {
 
-        execSequence( inputConfig, this, inputData )
+        execSequence( inputConfig, this, inputData, metaData )
           .then( data => {
             this.getSignal("output").dispatch( data );
           } ).catch( this.onError.bind( this ) );
@@ -77,7 +77,8 @@ export default class CommandSession {
     this.getSignal( "output" ).add( (session, data) => {
 
         ObjectUtils.forEach( outputConfig, (sequence, datatype) => {
-          execSequence( sequence, this, data, datatype )
+          var metaData = { datatype: datatype };
+          execSequence( sequence, this, data, metaData )
             .catch( this.onError.bind( this ) );
         });
 
@@ -86,9 +87,14 @@ export default class CommandSession {
     // create signal handlers for all other signals and call their bricks, when signal emitted
     // TODO: inherited data-types?
     ObjectUtils.forEach( otherSignals, ( signalConfig, signalName ) => {
-        this.getSignal( signalName ).add( ( session, dataType, signalData ) => {
-          execSequence( signalConfig[dataType], this, signalData)
-            .catch( this.onError.bind( this ) );
+        this.getSignal( signalName ).add( ( session, data, metaData ) => {
+
+          if( metaData && metaData.datatype ) {
+            execSequence( signalConfig[metaData.datatype], this, data, metaData)
+              .catch( this.onError.bind( this ) );
+          }
+          // TODO: what about signals without datatype?
+
         } );
       } );
   }
