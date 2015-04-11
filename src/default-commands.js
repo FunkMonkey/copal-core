@@ -3,7 +3,9 @@ export default [
     "name": "commands",
     "description": "Shows a list of available commands",
 
-    "query": {},
+    "initialData": {
+      "queryString": ""
+    },
 
     "preferredInputs": [],
     "preferredOutputs": [],
