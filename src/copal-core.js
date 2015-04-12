@@ -1,8 +1,3 @@
-
-// TODO: CommandConfig to InternalCommand
-// class InternalCommand {
-// }
-
 import CommandSession from "./commandsession";
 import ExamplePlugin from "./example/example-plugin";
 import Bricks from "./bricks";
@@ -24,10 +19,23 @@ const DEFAULT_SETTINGS = {
   }
 };
 
-// TODO: rename to CopalCore and make repository without copal-entry
-// also make CopalCore.profileDir...
-export default class CoPal {
+// TODO:  make CopalCore.profileDir...
+export default class CopalCore {
 
+  /**
+   * Creates a new core and runs it
+   *
+   * @return   {CopalCore}   The newly created core
+   */
+  static run() {
+    var core = new CopalCore();
+    return core.init()
+               .then( () => core );
+  }
+
+  /**
+   * Constructs a new CopalCore
+   */
   constructor() {
     this.commands = {};
     this.bricks = new Bricks();
@@ -85,13 +93,13 @@ export default class CoPal {
     if( this.activeCommandSession )
       this.activeCommandSession.getSignal("destroy").dispatch();
 
-    ++CoPal.lastCommandSessionID;
-    this.activeCommandSession = new CommandSession( CoPal.lastCommandSessionID, command, this.bricks );
+    ++CopalCore.lastCommandSessionID;
+    this.activeCommandSession = new CommandSession( CopalCore.lastCommandSessionID, command, this.bricks );
     this.activeCommandSession.execute();
   }
 
   /**
-   * Initializes CoPal
+   * Initializes CopalCore
    */
   init() {
     // testing
@@ -158,4 +166,4 @@ export default class CoPal {
 }
 
 // TODO: think about moving session counter somewhere else
-CoPal.lastCommandSessionID = 1;
+CopalCore.lastCommandSessionID = 1;

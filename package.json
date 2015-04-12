@@ -1,7 +1,7 @@
 {
-  "name": "copal",
+  "name": "copal-core",
   "version": "0.1.0",
-  "main": "build/copal-entry.js",
+  "main": "build/copal-core.js",
   "dependencies": {
     "config-file": "^0.1.8",
     "lodash": "^3.6.0",
