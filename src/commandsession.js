@@ -108,6 +108,7 @@ export default class CommandSession {
     var inputPromises = this.bricks.getInputBricks("standard-query-input").map( input => input( this ) );
     return Promise.all( inputPromises )
                   .then( () => {
+                    // TODO: maybe just dispatch an init-signal (but if it is not there, dispatch input)
                     this.getSignal("input").dispatch( this.initialData || {}, { sender: "command-session" } );
                   } )
                   .catch( this.onError.bind( this ) );

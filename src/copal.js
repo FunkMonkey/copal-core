@@ -24,6 +24,8 @@ const DEFAULT_SETTINGS = {
   }
 };
 
+// TODO: rename to CopalCore and make repository without copal-entry
+// also make CopalCore.profileDir...
 export default class CoPal {
 
   constructor() {
