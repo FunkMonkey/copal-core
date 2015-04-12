@@ -6,8 +6,6 @@ import config from "config-file";
 import _ from "lodash";
 
 import initDefaultBricks from "./default-bricks";
-
-// TODO: put default commands into JSON file
 import defaultCommands from "./default-commands";
 
 
@@ -17,7 +15,6 @@ const DEFAULT_SETTINGS = {
   }
 };
 
-// TODO:  make CopalCore.profileDir...
 export default class CopalCore {
 
   /**
@@ -41,7 +38,7 @@ export default class CopalCore {
     this.startupArgs = startupArgs;
     this.profileDir = startupArgs["profile-dir"];
     this.settings = this.loadProfileConfig( "settings.json") || { };
-    this.defaultifyOptions( this.settings, DEFAULT_SETTINGS, true );
+    this.settings = this.defaultifyOptions( this.settings, DEFAULT_SETTINGS );
 
     initDefaultBricks( this );
     defaultCommands.forEach( command => this.addCommand( command ) );
@@ -49,11 +46,6 @@ export default class CopalCore {
     var loadedCommands = this.loadProfileConfig( "commands.json") || [];
     loadedCommands.forEach( command => this.addCommand( command ) );
 
-    // TODO: command aliases
-
-    // TODO: support more than one active command
-    //   - but how will we deal with command destruction then?
-    //   - when is a command done?
     this.activeCommandSession = null;
   }
 
@@ -69,11 +61,20 @@ export default class CopalCore {
     if( !name )
       name = commandConfig.name;
 
-    // TODO: throw Error if name already existing
     if( !name )
       throw new Error( `A command with the name '${name}' already exists!` );
 
     this.commands[ name ] = commandConfig;
+  }
+
+  getCommand( name ) {
+
+    var command = this.commands[ name ];
+
+    if( !command )
+      throw new Error( `Command '${name}' does not exist!` );
+
+    return command;
   }
 
   /**
@@ -92,7 +93,7 @@ export default class CopalCore {
       this.activeCommandSession.getSignal("destroy").dispatch();
 
     ++CopalCore.lastCommandSessionID;
-    this.activeCommandSession = new CommandSession( CopalCore.lastCommandSessionID, command, this.bricks );
+    this.activeCommandSession = new CommandSession( this, CopalCore.lastCommandSessionID, command, this.bricks );
     this.activeCommandSession.execute();
   }
 
@@ -124,24 +125,14 @@ export default class CopalCore {
    *
    * @param    {Object}    options    Options to set defaults for
    * @param    {Object}    defaults   Defaults to set
-   * @param    {boolean}   deep       Set default for properties that are objects
    *
    * @return   {Object}               Options object that was passed in
    */
-  defaultifyOptions( options, defaults, deep ) {
-
-    if( deep ) {
-      for( var propName in options ) {
-        var prop = options[propName];
-        var defaultProp = defaults[propName];
-        if( typeof prop === "object" && !Array.isArray( prop ) && typeof defaultProp === "object" )
-          _.defaults( prop, defaultProp, deep );
-      }
-    }
-
-    _.defaults( options, defaults );
-
-    return options;
+  defaultifyOptions( options, defaults ) {
+    return _.merge( _.cloneDeep(defaults), options, ( a, b ) => {
+      if( Array.isArray( b ) )
+        return b;
+    } );
   }
 
   /**
@@ -154,7 +145,6 @@ export default class CopalCore {
       console.log( `Loading extension: '${extName}'` );
       var ext = require( extName );
 
-      // TODO: make init async
       if( ext.init && typeof ext.init === "function" )
         ext.init( this );
     });
@@ -163,5 +153,4 @@ export default class CopalCore {
   }
 }
 
-// TODO: think about moving session counter somewhere else
 CopalCore.lastCommandSessionID = 1;

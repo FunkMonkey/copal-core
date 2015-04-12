@@ -33,7 +33,6 @@ function executeCommand( cmdSession, commandName, options ) {
 
 function getCommandInfos( cmdSession, query ) {
   query = ( query.queryString || "" ).toLowerCase();
-  // TODO: return objects with descriptions
   return Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 ).sort();
 }
 
