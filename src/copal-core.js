@@ -10,8 +10,6 @@ import initDefaultBricks from "./default-bricks";
 // TODO: put default commands into JSON file
 import defaultCommands from "./default-commands";
 
-const appDataDir = process.env.APPDATA || ( process.platform === "darwin" ? process.env.HOME + "Library/Preference" : "/var/local" );
-const defaultProfileDir = path.join( appDataDir, "copal" );
 
 const DEFAULT_SETTINGS = {
   "extensions": {
@@ -27,8 +25,8 @@ export default class CopalCore {
    *
    * @return   {CopalCore}   The newly created core
    */
-  static run() {
-    var core = new CopalCore();
+  static run( profileDir ) {
+    var core = new CopalCore( profileDir );
     return core.init()
                .then( () => core );
   }
@@ -36,12 +34,12 @@ export default class CopalCore {
   /**
    * Constructs a new CopalCore
    */
-  constructor() {
+  constructor( profileDir ) {
     this.commands = {};
     this.bricks = new Bricks();
 
     // TODO: optional profile dir as command-line parameter
-    this.profileDir = defaultProfileDir;
+    this.profileDir = profileDir;
     this.settings = this.loadProfileConfig( "settings.json") || { };
     this.defaultifyOptions( this.settings, DEFAULT_SETTINGS, true );
 
