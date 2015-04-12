@@ -25,8 +25,8 @@ export default class CopalCore {
    *
    * @return   {CopalCore}   The newly created core
    */
-  static run( profileDir ) {
-    var core = new CopalCore( profileDir );
+  static run( startupArgs ) {
+    var core = new CopalCore( startupArgs );
     return core.init()
                .then( () => core );
   }
@@ -34,12 +34,12 @@ export default class CopalCore {
   /**
    * Constructs a new CopalCore
    */
-  constructor( profileDir ) {
+  constructor( startupArgs ) {
     this.commands = {};
     this.bricks = new Bricks();
 
-    // TODO: optional profile dir as command-line parameter
-    this.profileDir = profileDir;
+    this.startupArgs = startupArgs;
+    this.profileDir = startupArgs["profile-dir"];
     this.settings = this.loadProfileConfig( "settings.json") || { };
     this.defaultifyOptions( this.settings, DEFAULT_SETTINGS, true );
 
