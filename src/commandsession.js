@@ -9,7 +9,6 @@ export default class CommandSession {
 
     this.sessionID = sessionID;
     this.commandConfig = commandConfig;
-    this.initialData = commandConfig.initialData || {};
     this.bricks = bricks;
 
     this._signals = {};
@@ -141,7 +140,7 @@ export default class CommandSession {
     return Promise.all( inputPromises )
                   .then( () => {
                     // TODO: maybe just dispatch an init-signal (but if it is not there, dispatch input)
-                    this.getSignal("input").dispatch( this.initialData || {}, { sender: "command-session" } );
+                    this.getSignal("input").dispatch( this.commandConfig.initialData || {}, { sender: "command-session" } );
                   } )
                   .catch( this.onError.bind( this ) );
   }

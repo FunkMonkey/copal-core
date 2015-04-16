@@ -33,7 +33,7 @@ function executeCommand( cmdSession, commandName, options ) {
 
 function getCommandInfos( cmdSession, query ) {
   query = ( query.queryString || "" ).toLowerCase();
-  return Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 ).sort();
+  return Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
 }
 
 function openExternal ( cmdSession, url ) {
