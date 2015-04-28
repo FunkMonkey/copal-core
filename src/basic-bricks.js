@@ -40,7 +40,7 @@ function openExternal ( cmdSession, url ) {
 	return open( url );
 }
 
-export default function initDefaultBricks( copal ) {
+export default function ( copal ) {
 	copal.bricks.addErrorBrick( logErrorToConsole );
 	copal.bricks.addErrorBrick( showErrorDialog );
 

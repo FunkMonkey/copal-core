@@ -5,15 +5,9 @@ import path from "path";
 import config from "config-file";
 import _ from "lodash";
 
-import initDefaultBricks from "./default-bricks";
-import defaultCommands from "./default-commands";
-
-
-const DEFAULT_SETTINGS = {
-  "extensions": {
-    "enabled": []
-  }
-};
+import initBasicBricks from "./basic-bricks";
+import BASIC_COMMANDS from "./basic-commands.json";
+import DEFAULT_SETTINGS from "./default-settings.json";
 
 export default class CopalCore {
 
@@ -40,8 +34,8 @@ export default class CopalCore {
     this.settings = this.loadProfileConfig( "settings.json") || { };
     this.settings = this.defaultifyOptions( this.settings, DEFAULT_SETTINGS );
 
-    initDefaultBricks( this );
-    defaultCommands.forEach( command => this.addCommand( command ) );
+    initBasicBricks( this );
+    BASIC_COMMANDS.forEach( command => this.addCommand( command ) );
 
     var loadedCommands = this.loadProfileConfig( "commands.json") || [];
     loadedCommands.forEach( command => this.addCommand( command ) );
