@@ -1,4 +1,6 @@
 {
+	"debug-core": false,
+	"debug-all": false,
   "extensions": {
     "enabled": []
   }
