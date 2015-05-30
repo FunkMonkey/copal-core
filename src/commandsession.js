@@ -1,4 +1,6 @@
-import CurriedSignal from "./utils/curried-signal";
+// import CurriedSignal from "./utils/curried-signal";
+import signals from "signals";
+
 
 import _ from "lodash";
 import merge from "./utils/object-merge";
@@ -19,7 +21,7 @@ export default class CommandSession {
   getSignal( name ) {
     if( !this._signals[name] ) {
       // first argument of a signal will always be the command-session
-      var signal = this._signals[name] = new CurriedSignal( this );
+      var signal = this._signals[name] = new signals.Signal( );
       return signal;
     } else
       return this._signals[name];
@@ -54,13 +56,24 @@ export default class CommandSession {
   }
 
   create( core ) {
-
     this.commandConfig = this.resolveExtendedCommand( core, this.commandConfig );
 
     // get bricks by their ids
     var signalConfigs = _.mapValues( this.commandConfig.signals, (signalMap, signalName) => {
       return _.mapValues( signalMap, ( brickSequence ) => {
-        return brickSequence.map( brickID => {
+        return brickSequence.map( ( brickID, index ) => {
+
+          // check for signal bricks
+          if( brickID.indexOf( "::" ) === 0 ) {
+            if( index !== brickSequence.length - 1 )
+              throw new Error( `Signal bricks like '${brickID}' must be the last element of a brick sequence!` );
+
+            var signalID = brickID.substr( 2 );
+            // TODO: verify signal id
+
+            return ( error, dataAndMeta ) => this.getSignal( signalID ).dispatch( error, dataAndMeta );
+          }
+
           var brick = this.bricks.getDataBrick( brickID );
           if( !brick )
             throw new Error("Brick with ID '" + brickID + "' does not exist!" );
@@ -73,55 +86,37 @@ export default class CommandSession {
     // initialize error handlers
     this.bricks.getErrorBricks().forEach( brick => this.getSignal("error").add( brick ) );
 
-    // TODO: don't rely on "standard-query-input"
-    var inputConfig = signalConfigs.input["standard-query-input"];
+    // setup input signal
+    // var inputConfig = signalConfigs.input["standard-query-input"];
+    this.getSignal( "input" ).add( ( error, dataAndMeta ) => {
+        if( dataAndMeta ) {
+          dataAndMeta.session = this;
+          dataAndMeta.datatype = "standard-query-input"; // TODO: make independent from this datatype
+        }
 
-    // clean outputConfig from non existing output datatype handlers
-    var outputConfig = _.pick( signalConfigs.output, ( outputMap, datatype ) => this.bricks.getOutputBricks( datatype ) != null );
-    _.forIn( outputConfig, ( outputBricks, datatype ) => {
-      outputBricks.push( this.bricks.getOutputBricks( datatype )[0] ); // TODO: don't depend on first output brick
-    } );
+        var nextSignal = ( "post-input" in signalConfigs ) ? "post-input" : "output";
+        this.getSignal( nextSignal ).dispatch( error, dataAndMeta );
+      });
 
-    // all other signals
+    // setup output signal
+    this.getSignal( "output" ).add( (error, dataAndMeta) => {
+
+      if( dataAndMeta )
+        dataAndMeta.session = this;
+
+      // TODO: don't rely on this datatype
+      // TODO: don't depend on first output brick
+      var outputBrick = this.bricks.getOutputBricks( "list-title-url-icon" )[0];
+      this._executeBrickSequence( [outputBrick], error, dataAndMeta )
+              .catch( this.onError.bind( this ) );
+      });
+
+    // setup other signals
     var otherSignals = _.pick( signalConfigs, ( signalMap, signalName ) => signalName !== "input" && signalName !== "output" );
-
-    // TODO: make execSequence more abstract, take callback
-    var execSequence = ( sequence, session, data, ...restArgs ) => {
-      return sequence.reduce( (curr, next) => {
-        return curr.then( intermediateResult => {
-          return next( session, intermediateResult, ...restArgs );
-        });
-      }, Promise.resolve( data ) );
-    };
-
-    // input transformations
-    this.getSignal( "input" ).add( (session, inputData, metaData) => {
-
-        execSequence( inputConfig, this, inputData, metaData )
-          .then( data => {
-            this.getSignal("output").dispatch( data );
-          } ).catch( this.onError.bind( this ) );
-
-      });
-
-    // output transformations
-    this.getSignal( "output" ).add( (session, data) => {
-
-        _.forIn( outputConfig, (sequence, datatype) => {
-          var metaData = { datatype: datatype };
-          execSequence( sequence, this, data, metaData )
-            .catch( this.onError.bind( this ) );
-        });
-
-      });
-
-    // create signal handlers for all other signals and call their bricks, when signal emitted
-    // TODO: inherited data-types?
     _.forIn( otherSignals, ( signalConfig, signalName ) => {
-        this.getSignal( signalName ).add( ( session, data, metaData ) => {
-
-          if( metaData && metaData.datatype ) {
-            execSequence( signalConfig[metaData.datatype], this, data, metaData)
+        this.getSignal( signalName ).add( ( error, dataAndMeta ) => {
+          if( dataAndMeta.datatype ) {
+            this._executeBrickSequence( signalConfig[dataAndMeta.datatype], error, dataAndMeta )
               .catch( this.onError.bind( this ) );
           }
           // TODO: what about signals without datatype?
@@ -130,17 +125,41 @@ export default class CommandSession {
       } );
   }
 
+
+  _executeBrickSequence( sequence, error, dataAndMeta ) {
+    var currPromise = ( error == null ) ? Promise.resolve( dataAndMeta.data ) : Promise.reject( error );
+
+    sequence.forEach( brick => {
+      currPromise = currPromise.then( 
+        currResult => {
+          dataAndMeta.data = currResult;
+          return brick( null, dataAndMeta );
+        },
+        err => {
+          return brick( err, dataAndMeta );
+        });
+    } );
+
+    return currPromise;
+  }
+
+
   onError( error ) {
-    this.getSignal("error").dispatch( error );
+    this.getSignal("error").dispatch( error, { session: this } );
   }
 
   execute() {
     // connecting inputs with this command-session
-    var inputPromises = this.bricks.getInputBricks("standard-query-input").map( input => input( this ) );
+    var inputPromises = this.bricks.getInputBricks("standard-query-input").map( input => input( null, { session: this } ) );
     return Promise.all( inputPromises )
                   .then( () => {
                     // TODO: maybe just dispatch an init-signal (but if it is not there, dispatch input)
-                    this.getSignal("input").dispatch( this.commandConfig.initialData || {}, { sender: "command-session" } );
+                    var dataAndMeta = {
+                      data: this.commandConfig.initialData || {},
+                      sender: "command-session",
+                      session: this
+                    }
+                    this.getSignal("input").dispatch( null, dataAndMeta );
                   } )
                   .catch( this.onError.bind( this ) );
   }

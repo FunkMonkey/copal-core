@@ -11,11 +11,8 @@
     "preferredOutputs": [],
 
     "signals": {
-      "input": {
-        "standard-query-input": ["CoPal.getCommandInfos"]
-      },
-      "output": {
-        "list-title-url-icon": []
+      "post-input": {
+        "standard-query-input": ["CoPal.getCommandInfos", "::output"]
       },
       "listitem-execute": {
         "listitem-title-url-icon": ["CoPal.executeCommand"]
