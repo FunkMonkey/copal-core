@@ -125,18 +125,28 @@ export default class CommandSession {
       } );
   }
 
-
+  /**
+   * Executes a sequence of Bricks
+   *
+   * @param    {[type]}   sequence      [description]
+   * @param    {[type]}   error         [description]
+   * @param    {[type]}   dataAndMeta   [description]
+   *
+   * @return   {[type]}                 [description]
+   */
   _executeBrickSequence( sequence, error, dataAndMeta ) {
-    var currPromise = ( error == null ) ? Promise.resolve( dataAndMeta.data ) : Promise.reject( error );
+    var lastResult = dataAndMeta;
+    var currPromise = ( error == null ) ? Promise.resolve( lastResult ) : Promise.reject( error );
 
     sequence.forEach( brick => {
       currPromise = currPromise.then( 
         currResult => {
-          dataAndMeta.data = currResult;
-          return brick( null, dataAndMeta );
+          // TODO: verify that session is in currResult
+          lastResult = currResult;
+          return brick( null, lastResult );
         },
         err => {
-          return brick( err, dataAndMeta );
+          return brick( err, lastResult );
         });
     } );
 

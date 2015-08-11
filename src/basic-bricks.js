@@ -16,15 +16,19 @@ function getErrorData( error ) {
     };
 }
 
-function logErrorToConsole( error ) {
+function logErrorToConsole( error, dataAndMeta ) {
   var errorData = getErrorData( error );
   console.log( errorData.title + "\n" + errorData.stack );
+
+  return dataAndMeta;
 }
 
-function showErrorDialog( error ) {
+function showErrorDialog( error, dataAndMeta ) {
   var errorData = getErrorData( error );
 
   dialog.showErrorBox( errorData.title, errorData.title + "\n\n" + errorData.stack );
+
+  return dataAndMeta;
 }
 
 function executeCommand( error, dataAndMeta ) {
@@ -32,6 +36,8 @@ function executeCommand( error, dataAndMeta ) {
     throw error;
 
   this.executeCommand( dataAndMeta.data );
+
+  return dataAndMeta;
 }
 
 function getCommandInfos( error, dataAndMeta ) {
@@ -40,14 +46,18 @@ function getCommandInfos( error, dataAndMeta ) {
   }
 
   var query = ( dataAndMeta.data.queryString || "" ).toLowerCase();
-  return Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
+  dataAndMeta.data = Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
+
+  return dataAndMeta;
 }
 
 function openExternal ( error, dataAndMeta ) {
   if( error )
     throw error;
 
-	return open( dataAndMeta.data );
+	open( dataAndMeta.data );
+
+  return dataAndMeta;
 }
 
 export default function ( copal ) {
