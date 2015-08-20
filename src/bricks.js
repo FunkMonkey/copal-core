@@ -3,55 +3,41 @@ export default class Bricks {
   constructor() {
     this.inputBricks = {};
     this.outputBricks = {};
-    this.dataBricks = {};
+    this.transformBricks = {};
     this.errorBricks = [];
   }
 
-  addInputBrick( inputDatatype, brickID, brick ) {
-    // TODO: check arguments
-    var inputBricksByDatatype = this.inputBricks[ inputDatatype ];
+  addInputBrick( brickID, brick ) {
+    if( this.inputBricks[ brickID ] )
+      throw new Error(`Input-Brick with ID '${brickID}' already exists!`);
 
-    if( !inputBricksByDatatype )
-      inputBricksByDatatype = this.inputBricks[ inputDatatype ] = [];
-
-    inputBricksByDatatype.push( brick );
+    this.inputBricks[ brickID ] = brick;
   }
 
-  getInputBricks( datatype ) {
-    return this.inputBricks[ datatype ];
+  getInputBrick( brickID ) {
+    return this.inputBricks[ brickID ];
   }
 
-  addOutputBrick( outputDatatype, brickID, brick ) {
-    var outputBricksByDatatype = this.outputBricks[ outputDatatype ];
+  addOutputBrick( brickID, brick ) {
+    if( this.outputBricks[ brickID ] )
+      throw new Error(`Output-Brick with ID '${brickID}' already exists!`);
 
-    if( !outputBricksByDatatype )
-      outputBricksByDatatype = this.outputBricks[ outputDatatype ] = [];
-
-    outputBricksByDatatype.push( brick );
+    this.outputBricks[ brickID ] = brick;
   }
 
-  getOutputBricks( datatype ) {
-    return this.outputBricks[ datatype ];
+  getOutputBrick( brickID ) {
+    return this.outputBricks[ brickID ];
   }
 
-  addDataBrick( brickID, brick ) {
-    if( this.dataBricks[ brickID ] )
-      throw new Error("Brick with ID '" + brickID + "' already existing!");
+  addTransformBrick( brickID, brick ) {
+    if( this.transformBricks[ brickID ] )
+      throw new Error(`Transform-Brick with ID '${brickID}' already exists!`);
 
-    this.dataBricks[ brickID ] = brick;
+    this.transformBricks[ brickID ] = brick;
   }
 
-  getDataBrick( brickID ) {
-    return this.dataBricks[ brickID ];
+  getTransformBrick( brickID ) {
+    return this.transformBricks[ brickID ];
   }
-
-  addErrorBrick( brick ) {
-    this.errorBricks.push( brick );
-  }
-
-  getErrorBricks() {
-    return this.errorBricks;
-  }
-
 
 }

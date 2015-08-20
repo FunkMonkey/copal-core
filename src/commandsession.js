@@ -1,10 +1,14 @@
 // import CurriedSignal from "./utils/curried-signal";
-import signals from "signals";
+import {PassThrough, Transform, Readable} from "stream";
 
+import util from "util";
+
+const RESERVED_STREAM_NAMES = [ "output" ];
 
 import _ from "lodash";
 import merge from "./utils/object-merge";
 
+// TODO: make EventEmitter
 export default class CommandSession {
 
   constructor(core, sessionID, commandConfig, bricks ) {
@@ -13,18 +17,16 @@ export default class CommandSession {
     this.commandConfig = commandConfig;
     this.bricks = bricks;
 
-    this._signals = {};
-
     this.create( core );
   }
 
-  getSignal( name ) {
-    if( !this._signals[name] ) {
-      // first argument of a signal will always be the command-session
-      var signal = this._signals[name] = new signals.Signal( );
-      return signal;
-    } else
-      return this._signals[name];
+  getStream( name ) {
+    const stream = this._streams[name];
+
+    if( !stream )
+      throw new Error( `Stream '${name}' does not exist!` );
+
+    return stream;
   }
 
   _mergeCommands( a, b, noMergeList ) {
@@ -55,123 +57,117 @@ export default class CommandSession {
     return commandConfig;
   }
 
+  setNameAndErrorHandler( stream, name ) {
+    stream.streamName = name;
+    stream.on("error", error => console.error(name, error, error.stack));
+    // stream.on("data", (data) => console.log(name, data));
+    // stream.on("unpipe", (data) => console.log("UNPIPE", name, data));
+    // stream.on("pipe", (data) => console.log("PIPE", name, data));
+  }
+
   create( core ) {
     this.commandConfig = this.resolveExtendedCommand( core, this.commandConfig );
 
-    // get bricks by their ids
-    var signalConfigs = _.mapValues( this.commandConfig.signals, (signalMap, signalName) => {
-      return _.mapValues( signalMap, ( brickSequence ) => {
-        return brickSequence.map( ( brickID, index ) => {
+    // setting up streams
+    this._streams = Object.create( null );
 
-          // check for signal bricks
-          if( brickID.indexOf( "::" ) === 0 ) {
-            if( index !== brickSequence.length - 1 )
-              throw new Error( `Signal bricks like '${brickID}' must be the last element of a brick sequence!` );
+    const outputStream = this._streams[ "output" ] = new PassThrough( {objectMode: true} );
+    this.setNameAndErrorHandler( outputStream, "output" );
 
-            var signalID = brickID.substr( 2 );
-            // TODO: verify signal id
+    // first pass: create the streams (necessary for cross-references)
+    _.mapValues( this.commandConfig.streams, (streamConfig, streamName) => {
+      if( RESERVED_STREAM_NAMES.indexOf( streamName ) !== -1 )
+        throw new Error( `Stream name '${streamName}' is not allowed as the following stream names are reserved: ${RESERVED_STREAM_NAMES.join(",")}. ` );
 
-            return ( error, dataAndMeta ) => this.getSignal( signalID ).dispatch( error, dataAndMeta );
-          }
+      const stream = new PassThrough( {objectMode: true} );
+      this.setNameAndErrorHandler( stream, streamName );
 
-          var brick = this.bricks.getDataBrick( brickID );
+      this._streams[streamName] = stream;
+    } );
+
+    // second pass
+    _.mapValues( this.commandConfig.streams, (streamConfig, streamName) => {
+      var currStream = this._streams[streamName];
+
+      // var prevStream = streamName;
+
+      streamConfig.forEach( ( brickID, index ) => {
+        // console.log(`connecting ${prevStream} > ${brickID}`);
+        // prevStream = brickID;
+
+        // check for pipe bricks
+        if( brickID.indexOf( ">" ) === 0 ) {
+          if( index !== streamConfig.length - 1 )
+            throw new Error( `Pipe bricks like '${brickID}' must be the last element of a brick sequence!` );
+
+          const streamID = brickID.substr( 1 ).trim();
+
+          const pipeStream = this._streams[ streamID ];
+
+          if( !pipeStream )
+            throw new Error( `Pipe bricks '${brickID}' does not resolve to an existing stream!` );
+
+          currStream.pipe( pipeStream );
+          currStream = pipeStream;
+        } else {
+          const brick = this.bricks.getTransformBrick( brickID );
           if( !brick )
-            throw new Error("Brick with ID '" + brickID + "' does not exist!" );
+            throw new Error(`Brick '${brickID}' does not exist!` );
 
-          return brick;
-          } );
-      } );
-    } );
+          // TODO: handle errors and pipe them into the error stream
+          const brickStreams = brick( this ); // TODO pass parsed brick parameters
 
-    // initialize error handlers
-    this.bricks.getErrorBricks().forEach( brick => this.getSignal("error").add( brick ) );
+          // do we get back a single stream or a sequence of streams?
+          if( Array.isArray( brickStreams ) ) {
+            if( brickStreams.length < 2 )
+              throw new Error("Stream-Sequence needs at least two streams"); // TODO: better message
 
-    // setup input signal
-    // var inputConfig = signalConfigs.input["standard-query-input"];
-    this.getSignal( "input" ).add( ( error, dataAndMeta ) => {
-        if( dataAndMeta ) {
-          dataAndMeta.session = this;
-          dataAndMeta.datatype = "standard-query-input"; // TODO: make independent from this datatype
-        }
+            // pipe into the start of the sequence, use the last stream for later piping
+            const firstBrickStream = brickStreams[0];
+            this.setNameAndErrorHandler( firstBrickStream, brickID + "[first]" );
+            const lastBrickStream = brickStreams[ brickStreams.length - 1 ];
+            this.setNameAndErrorHandler( lastBrickStream, brickID + "[last]" );
 
-        var nextSignal = ( "post-input" in signalConfigs ) ? "post-input" : "output";
-        this.getSignal( nextSignal ).dispatch( error, dataAndMeta );
-      });
+            currStream.pipe( firstBrickStream );
+            currStream = lastBrickStream;
 
-    // setup output signal
-    this.getSignal( "output" ).add( (error, dataAndMeta) => {
-
-      if( dataAndMeta )
-        dataAndMeta.session = this;
-
-      // TODO: don't rely on this datatype
-      // TODO: don't depend on first output brick
-      var outputBrick = this.bricks.getOutputBricks( "list-title-url-icon" )[0];
-      this._executeBrickSequence( [outputBrick], error, dataAndMeta )
-              .catch( this.onError.bind( this ) );
-      });
-
-    // setup other signals
-    var otherSignals = _.pick( signalConfigs, ( signalMap, signalName ) => signalName !== "input" && signalName !== "output" );
-    _.forIn( otherSignals, ( signalConfig, signalName ) => {
-        this.getSignal( signalName ).add( ( error, dataAndMeta ) => {
-          if( dataAndMeta.datatype ) {
-            this._executeBrickSequence( signalConfig[dataAndMeta.datatype], error, dataAndMeta )
-              .catch( this.onError.bind( this ) );
+          } else {
+            this.setNameAndErrorHandler( brickStreams, brickID );
+            currStream.pipe( brickStreams );
+            currStream = brickStreams;
           }
-          // TODO: what about signals without datatype?
-
-        } );
+        }
       } );
-  }
-
-  /**
-   * Executes a sequence of Bricks
-   *
-   * @param    {[type]}   sequence      [description]
-   * @param    {[type]}   error         [description]
-   * @param    {[type]}   dataAndMeta   [description]
-   *
-   * @return   {[type]}                 [description]
-   */
-  _executeBrickSequence( sequence, error, dataAndMeta ) {
-    var lastResult = dataAndMeta;
-    var currPromise = ( error == null ) ? Promise.resolve( lastResult ) : Promise.reject( error );
-
-    sequence.forEach( brick => {
-      currPromise = currPromise.then( 
-        currResult => {
-          // TODO: verify that session is in currResult
-          lastResult = currResult;
-          return brick( null, lastResult );
-        },
-        err => {
-          return brick( err, lastResult );
-        });
     } );
 
-    return currPromise;
+    // connect to outputs
+    _.mapValues( this.bricks.outputBricks, (outBrick, outName) => {
+      var lastOutput = outBrick( this );
+      this.setNameAndErrorHandler( lastOutput, outName );
+
+      outputStream.pipe( lastOutput );
+    });
   }
 
+  destroy() {
 
-  onError( error ) {
-    this.getSignal("error").dispatch( error, { session: this } );
   }
 
   execute() {
-    // connecting inputs with this command-session
-    var inputPromises = this.bricks.getInputBricks("standard-query-input").map( input => input( null, { session: this } ) );
-    return Promise.all( inputPromises )
-                  .then( () => {
-                    // TODO: maybe just dispatch an init-signal (but if it is not there, dispatch input)
-                    var dataAndMeta = {
-                      data: this.commandConfig.initialData || {},
-                      sender: "command-session",
-                      session: this
-                    }
-                    this.getSignal("input").dispatch( null, dataAndMeta );
-                  } )
-                  .catch( this.onError.bind( this ) );
+
+    var mainInputStream = this._streams[ "input" ];
+    // mainInputStream.on("pipe", (data) => console.log("INPUT got piped"));
+
+    // inform inputs of this session
+    _.mapValues( this.bricks.inputBricks, input => input( this ).pipe( mainInputStream ) );
+
+    // push our first data: TODO only do if initialData exists
+    var dataAndMeta = {
+      data: this.commandConfig.initialData || {},
+      sender: "command-session"
+    }
+
+    mainInputStream.push( dataAndMeta );
   }
 
 }

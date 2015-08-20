@@ -1,5 +1,5 @@
 import CommandSession from "./commandsession";
-import ExamplePlugin from "./example/example-plugin";
+// import ExamplePlugin from "./example/example-plugin";
 import Bricks from "./bricks";
 import path from "path";
 import config from "config-file";
@@ -84,7 +84,7 @@ export default class CopalCore {
       throw new Error( `Command '${name}' does not exist!` );
 
     if( this.activeCommandSession )
-      this.activeCommandSession.getSignal("destroy").dispatch();
+      this.activeCommandSession.destroy();
 
     ++CopalCore.lastCommandSessionID;
     this.activeCommandSession = new CommandSession( this, CopalCore.lastCommandSessionID, command, this.bricks );
@@ -96,7 +96,7 @@ export default class CopalCore {
    */
   init() {
     // testing
-    ExamplePlugin.init( this );
+    // ExamplePlugin.init( this );
 
     return this.loadExtensions();
   }

@@ -7,7 +7,8 @@
 	"rules": {
 		"global-strict": 0,
 		"curly": 0,
-		"no-underscore-dangle": 0
+		"no-underscore-dangle": 0,
+		"no-unused-vars": [2, {"vars": "all", "args": "after-used"}]
 	},
 	"ecmaFeatures": {
 		"arrowFunctions": true,

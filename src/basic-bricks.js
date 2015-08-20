@@ -1,7 +1,8 @@
 
-
+import Transform from "stream";
 import dialog from "dialog";
 import open from "open";
+import through2 from "through2";
 
 function getErrorData( error ) {
   if( error.stack )
@@ -31,40 +32,39 @@ function showErrorDialog( error, dataAndMeta ) {
   return dataAndMeta;
 }
 
-function executeCommand( error, dataAndMeta ) {
-  if( error )
-    throw error;
+function executeCommand( ) {
 
-  this.executeCommand( dataAndMeta.data );
+  return through2.obj( (dataAndMeta, enc, done) => {
+    this.executeCommand( dataAndMeta.data );
+    done( null, dataAndMeta );
+  });
 
-  return dataAndMeta;
 }
 
-function getCommandInfos( error, dataAndMeta ) {
-  if( error ) {
-    throw error;
-  }
+function getCommandInfos( ) {
 
-  var query = ( dataAndMeta.data.queryString || "" ).toLowerCase();
-  dataAndMeta.data = Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
+  return through2.obj( (dataAndMeta, enc, done) => {
 
-  return dataAndMeta;
+    const query = ( dataAndMeta.data.queryString || "" ).toLowerCase();
+    const data = Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
+
+    done( null, { data } );
+  });
+
 }
 
-function openExternal ( error, dataAndMeta ) {
-  if( error )
-    throw error;
-
-	open( dataAndMeta.data );
-
-  return dataAndMeta;
+function openExternal ( ) {
+  return through2.obj( (dataAndMeta, enc, done) => {
+    open( dataAndMeta.data );
+    done( null, dataAndMeta );
+  });
 }
 
 export default function ( copal ) {
-	copal.bricks.addErrorBrick( logErrorToConsole );
-	copal.bricks.addErrorBrick( showErrorDialog );
+	// copal.bricks.addErrorBrick( logErrorToConsole );
+	// copal.bricks.addErrorBrick( showErrorDialog );
 
-	copal.bricks.addDataBrick( "CoPal.getCommandInfos", getCommandInfos.bind( copal ) );
-	copal.bricks.addDataBrick( "CoPal.executeCommand", executeCommand.bind( copal ) );
-	copal.bricks.addDataBrick( "Common.open", openExternal );
+	copal.bricks.addTransformBrick( "CoPal.getCommandInfos", getCommandInfos.bind( copal ) );
+	copal.bricks.addTransformBrick( "CoPal.executeCommand", executeCommand.bind( copal ) );
+	copal.bricks.addTransformBrick( "Common.open", openExternal );
 }

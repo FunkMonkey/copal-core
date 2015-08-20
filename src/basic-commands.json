@@ -10,13 +10,9 @@
     "preferredInputs": [],
     "preferredOutputs": [],
 
-    "signals": {
-      "post-input": {
-        "standard-query-input": ["CoPal.getCommandInfos", "::output"]
-      },
-      "listitem-execute": {
-        "listitem-title-url-icon": ["CoPal.executeCommand"]
-      }
+    "streams": {
+      "input": ["CoPal.getCommandInfos", "> output"],
+      "listitem-execute": ["CoPal.executeCommand"]
     }
   }
 ]
