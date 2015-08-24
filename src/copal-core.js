@@ -77,7 +77,7 @@ export default class CopalCore {
    * @param  {string}   name        Name of the command to execute
    * @param  {Object}   [options]   Options passed to the command
    */
-  executeCommand( name, options ) {
+  executeCommand( name /*, options */ ) {
     var command = this.commands[ name ];
 
     if( !command )

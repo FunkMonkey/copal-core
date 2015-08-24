@@ -1,5 +1,4 @@
 
-import Transform from "stream";
 import dialog from "dialog";
 import open from "open";
 import through2 from "through2";

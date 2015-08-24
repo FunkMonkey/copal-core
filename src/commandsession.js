@@ -1,7 +1,5 @@
 // import CurriedSignal from "./utils/curried-signal";
-import {PassThrough, Transform, Readable} from "stream";
-
-import util from "util";
+import {PassThrough} from "stream";
 
 const RESERVED_STREAM_NAMES = [ "output" ];
 
