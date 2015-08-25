@@ -87,11 +87,7 @@ export default class CommandSession {
     _.mapValues( this.commandConfig.streams, (streamConfig, streamName) => {
       var currStream = this._streams[streamName];
 
-      // var prevStream = streamName;
-
       streamConfig.forEach( ( brickID, index ) => {
-        // console.log(`connecting ${prevStream} > ${brickID}`);
-        // prevStream = brickID;
 
         // check for pipe bricks
         if( brickID.indexOf( ">" ) === 0 ) {
