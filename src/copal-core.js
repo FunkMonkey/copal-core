@@ -98,7 +98,11 @@ export default class CopalCore {
     // testing
     // ExamplePlugin.init( this );
 
-    return this.loadExtensions();
+    return this.loadExtensions().
+      then( () => {
+        if( this.settings.startupCommand )
+          this.executeCommand( this.settings.startupCommand );
+      } );
   }
 
   /**

@@ -3,5 +3,7 @@
 	"debug-all": false,
   "extensions": {
     "enabled": []
-  }
+  },
+
+	"startupCommand": ""
 }
