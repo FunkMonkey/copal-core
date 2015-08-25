@@ -87,6 +87,7 @@ export default class CopalCore {
       this.activeCommandSession.destroy();
 
     ++CopalCore.lastCommandSessionID;
+
     this.activeCommandSession = new CommandSession( this, CopalCore.lastCommandSessionID, command, this.bricks );
     this.activeCommandSession.execute();
   }
@@ -98,11 +99,12 @@ export default class CopalCore {
     // testing
     // ExamplePlugin.init( this );
 
-    return this.loadExtensions().
-      then( () => {
+    return this.loadExtensions()
+      .then( () => {
         if( this.settings.startupCommand )
           this.executeCommand( this.settings.startupCommand );
-      } );
+      } )
+      .catch( error => console.error( error, error.stack ) );
   }
 
   /**

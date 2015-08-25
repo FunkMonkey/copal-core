@@ -1,18 +1,18 @@
 // import CurriedSignal from "./utils/curried-signal";
+import _ from "lodash";
 import {PassThrough} from "stream";
+import CommandConfig from "./command-config";
+
 
 const RESERVED_STREAM_NAMES = [ "output" ];
-
-import _ from "lodash";
-import merge from "./utils/object-merge";
 
 // TODO: make EventEmitter
 export default class CommandSession {
 
-  constructor(core, sessionID, commandConfig, bricks ) {
+  constructor(core, sessionID, origCommandConfig, bricks ) {
 
     this.sessionID = sessionID;
-    this.commandConfig = commandConfig;
+    this.originalCommandConfig = origCommandConfig;
     this.bricks = bricks;
 
     this.create( core );
@@ -27,34 +27,6 @@ export default class CommandSession {
     return stream;
   }
 
-  _mergeCommands( a, b, noMergeList ) {
-    return merge( a, b, ( aValue, bValue, key, obj, src, parentPath, fullPath ) => {
-      if( Array.isArray( bValue ) )
-        return bValue;
-
-      if( noMergeList && noMergeList.indexOf( fullPath ) !== -1 )
-        return bValue;
-    } );
-  }
-
-  resolveExtendedCommand( core, commandConfig ) {
-    if( !commandConfig.extends )
-      return commandConfig;
-
-    var base = null;
-
-    if( typeof commandConfig.extends === "string" ) {
-      base = this.resolveExtendedCommand( core, core.getCommand( commandConfig.extends ) );
-      return this._mergeCommands( _.cloneDeep( base ), commandConfig );
-    }
-
-    if( typeof commandConfig.extends === "object" ) {
-      base = this.resolveExtendedCommand( core, core.getCommand( commandConfig.extends.command ) );
-      return this._mergeCommands( _.cloneDeep( base ), commandConfig, commandConfig.extends.noMerge );
-    }
-    return commandConfig;
-  }
-
   setNameAndErrorHandler( stream, name ) {
     stream.streamName = name;
     stream.on("error", error => console.error(name, error, error.stack));
@@ -64,7 +36,8 @@ export default class CommandSession {
   }
 
   create( core ) {
-    this.commandConfig = this.resolveExtendedCommand( core, this.commandConfig );
+    // this.commandConfig = this.resolveExtendedCommand( core, this.commandConfig );
+    this.commandConfig = CommandConfig.create( core, this.originalCommandConfig );
 
     // setting up streams
     this._streams = Object.create( null );
@@ -73,7 +46,7 @@ export default class CommandSession {
     this.setNameAndErrorHandler( outputStream, "output" );
 
     // first pass: create the streams (necessary for cross-references)
-    _.mapValues( this.commandConfig.streams, (streamConfig, streamName) => {
+    _.mapValues( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
       if( RESERVED_STREAM_NAMES.indexOf( streamName ) !== -1 )
         throw new Error( `Stream name '${streamName}' is not allowed as the following stream names are reserved: ${RESERVED_STREAM_NAMES.join(",")}. ` );
 
@@ -84,32 +57,33 @@ export default class CommandSession {
     } );
 
     // second pass
-    _.mapValues( this.commandConfig.streams, (streamConfig, streamName) => {
+    _.mapValues( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
       var currStream = this._streams[streamName];
 
-      streamConfig.forEach( ( brickID, index ) => {
+      streamConfig.forEach( ( brickConfig, index ) => {
+
+        const longID = `${this.commandConfig.name}:${streamName}:${brickConfig.origString}`;
 
         // check for pipe bricks
-        if( brickID.indexOf( ">" ) === 0 ) {
+        if( brickConfig.isPipe) {
+
           if( index !== streamConfig.length - 1 )
-            throw new Error( `Pipe bricks like '${brickID}' must be the last element of a brick sequence!` );
+            throw new Error( `Pipe-bricks like '${longID}' must be the last element of a brick sequence!` );
 
-          const streamID = brickID.substr( 1 ).trim();
-
-          const pipeStream = this._streams[ streamID ];
+          const pipeStream = this._streams[ brickConfig.id ];
 
           if( !pipeStream )
-            throw new Error( `Pipe bricks '${brickID}' does not resolve to an existing stream!` );
+            throw new Error( `Pipe-brick'${longID}' does not resolve to an existing stream!` );
 
           currStream.pipe( pipeStream );
           currStream = pipeStream;
         } else {
-          const brick = this.bricks.getTransformBrick( brickID );
+          const brick = this.bricks.getTransformBrick( brickConfig.id );
           if( !brick )
-            throw new Error(`Brick '${brickID}' does not exist!` );
+            throw new Error(`Brick '${longID}' does not exist!` );
 
           // TODO: handle errors and pipe them into the error stream
-          const brickStreams = brick( this ); // TODO pass parsed brick parameters
+          const brickStreams = brick( this, ...brickConfig.args );
 
           // do we get back a single stream or a sequence of streams?
           if( Array.isArray( brickStreams ) ) {
@@ -118,15 +92,15 @@ export default class CommandSession {
 
             // pipe into the start of the sequence, use the last stream for later piping
             const firstBrickStream = brickStreams[0];
-            this.setNameAndErrorHandler( firstBrickStream, brickID + "[first]" );
+            this.setNameAndErrorHandler( firstBrickStream, brickConfig.id + "[first]" );
             const lastBrickStream = brickStreams[ brickStreams.length - 1 ];
-            this.setNameAndErrorHandler( lastBrickStream, brickID + "[last]" );
+            this.setNameAndErrorHandler( lastBrickStream, brickConfig.id + "[last]" );
 
             currStream.pipe( firstBrickStream );
             currStream = lastBrickStream;
 
           } else {
-            this.setNameAndErrorHandler( brickStreams, brickID );
+            this.setNameAndErrorHandler( brickStreams, brickConfig.id );
             currStream.pipe( brickStreams );
             currStream = brickStreams;
           }
