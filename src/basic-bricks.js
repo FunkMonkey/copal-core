@@ -2,68 +2,67 @@
 import dialog from "dialog";
 import open from "open";
 import through2 from "through2";
+import dec from "./utils/decorators";
 
-function getErrorData( error ) {
-  if( error.stack )
-    return {
-      title: error.name + ": " + error.message,
-      stack: error.stack
-    };
-  else
-    return {
-      title: error,
-      stack: ""
-    };
-}
+const bricks = {
 
-function logErrorToConsole( error, dataAndMeta ) {
-  var errorData = getErrorData( error );
-  console.log( errorData.title + "\n" + errorData.stack );
 
-  return dataAndMeta;
-}
+  getErrorData( error ) {
+    if( error.stack )
+      return {
+        title: error.name + ": " + error.message,
+        stack: error.stack
+      };
+    else
+      return {
+        title: error,
+        stack: ""
+      };
+  },
 
-function showErrorDialog( error, dataAndMeta ) {
-  var errorData = getErrorData( error );
+  logErrorToConsole( error, dataAndMeta ) {
+    var errorData = getErrorData( error );
+    console.log( errorData.title + "\n" + errorData.stack );
 
-  dialog.showErrorBox( errorData.title, errorData.title + "\n\n" + errorData.stack );
+    return dataAndMeta;
+  },
 
-  return dataAndMeta;
-}
+  showErrorDialog( error, dataAndMeta ) {
+    var errorData = getErrorData( error );
 
-function executeCommand( ) {
+    dialog.showErrorBox( errorData.title, errorData.title + "\n\n" + errorData.stack );
 
-  return through2.obj( (dataAndMeta, enc, done) => {
+    return dataAndMeta;
+  },
+
+  @dec.wrapInStreamSync
+  executeCommand( session, dataAndMeta ) {
     this.executeCommand( dataAndMeta.data );
-    done( null, dataAndMeta );
-  });
+    return dataAndMeta;
+  },
 
-}
-
-function getCommandInfos( ) {
-
-  return through2.obj( (dataAndMeta, enc, done) => {
+  @dec.wrapInStreamSync
+  getCommandInfos( session, dataAndMeta ) {
 
     const query = ( dataAndMeta.data.queryString || "" ).toLowerCase();
     const data = Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
 
-    done( null, { data } );
-  });
+    return { data }
+  },
 
-}
-
-function openExternal ( ) {
-  return through2.obj( (dataAndMeta, enc, done) => {
+  @dec.wrapInStreamSync
+  openExternal ( session, dataAndMeta ) {
     open( dataAndMeta.data );
-    done( null, dataAndMeta );
-  });
-}
+    return dataAndMeta;
+  }
+
+};
 
 export default function ( copal ) {
 	// copal.bricks.addErrorBrick( logErrorToConsole );
 	// copal.bricks.addErrorBrick( showErrorDialog );
 
-	copal.bricks.addTransformBrick( "CoPal.getCommandInfos", getCommandInfos.bind( copal ) );
-	copal.bricks.addTransformBrick( "CoPal.executeCommand", executeCommand.bind( copal ) );
-	copal.bricks.addTransformBrick( "Common.open", openExternal );
+	copal.bricks.addTransformBrick( "CoPal.getCommandInfos", bricks.getCommandInfos.bind( copal ) );
+	copal.bricks.addTransformBrick( "CoPal.executeCommand", bricks.executeCommand.bind( copal ) );
+	copal.bricks.addTransformBrick( "Common.open", bricks.openExternal );
 }
