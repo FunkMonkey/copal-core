@@ -1,5 +1,6 @@
 import _ from "lodash";
 import merge from "./utils/object-merge";
+import jsonic from "jsonic";
 
 export default {
   _mergeCommands( a, b, noMergeList ) {
@@ -73,9 +74,7 @@ export default {
       if( closeParenPos < 0 )
         throw new Error( `Brick '${cmdName}:${streamName}:${brickConfig.origString}' misses a closing parentheses!` );
 
-      // TODO: use a JSON parser that is less strict
-      brickConfig.args = JSON.parse( `[${brickConfig.id.substring( openParenPos + 1, closeParenPos )}]` );
-
+      brickConfig.args = jsonic( `[${brickConfig.id.substring( openParenPos + 1, closeParenPos )}]` );
       brickConfig.id = brickConfig.id.substring(0, openParenPos);
     } else {
       brickConfig.args = [];
