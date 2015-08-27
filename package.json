@@ -1,6 +1,6 @@
 {
   "name": "copal-core",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "main": "build/copal-core.js",
   "dependencies": {
     "config-file": "^0.1.8",
