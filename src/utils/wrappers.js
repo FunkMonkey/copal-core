@@ -4,10 +4,10 @@ export default {
 
   wrapInStreamSync( funcToWrap ) {
 
-    return function ( session, ...restArgs ) {
-      return through2.obj( (dataAndMeta, enc, done) => {
+    return function ( sessionData, ...restArgs ) {
+      return through2.obj( (data, enc, done) => {
 
-        var result = funcToWrap.call( this, session, dataAndMeta, ...restArgs );
+        var result = funcToWrap.call( this, sessionData, data, ...restArgs );
 
         done( null, result );
       });
@@ -16,17 +16,17 @@ export default {
 
   wrapInStreamAsync( funcToWrap ) {
 
-    return function ( session, ...restArgs ) {
-      return through2.obj( (dataAndMeta, enc, done) => {
-        funcToWrap.call( this, session, dataAndMeta, done, ...restArgs );
+    return function ( sessionData, ...restArgs ) {
+      return through2.obj( (data, enc, done) => {
+        funcToWrap.call( this, sessionData, data, done, ...restArgs );
       });
     };
   },
 
   wrapInStreamPromise( funcToWrap ) {
-    return function ( session, ...restArgs ) {
-      return through2.obj( (dataAndMeta, enc, done) => {
-        funcToWrap.call( this, session, dataAndMeta, ...restArgs )
+    return function ( sessionData, ...restArgs ) {
+      return through2.obj( (data, enc, done) => {
+        funcToWrap.call( this, sessionData, data, ...restArgs )
           .then( result => done( null, result), error => done( error ) );
       });
     };

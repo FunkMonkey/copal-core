@@ -128,19 +128,17 @@ export default class CommandSession {
 
   execute() {
 
-    var mainInputStream = this._streams[ "input" ];
+    const mainInputStream = this._streams[ "input" ];
     // mainInputStream.on("pipe", (data) => console.log("INPUT got piped"));
 
     // inform inputs of this session
     _.forIn( this.bricks.inputBricks, input => input( this ).pipe( mainInputStream ) );
 
-    // push our first data: TODO only do if initialData exists
-    var dataAndMeta = {
-      data: this.commandConfig.initialData || {},
-      sender: "command-session"
-    }
+    const initialData = this.commandConfig.initialData;
 
-    mainInputStream.push( dataAndMeta );
+    if( initialData ) {
+      mainInputStream.push( initialData );
+    }
   }
 
 }

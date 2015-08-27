@@ -36,24 +36,21 @@ const bricks = {
   },
 
   @dec.wrapInStreamSync
-  executeCommand( session, dataAndMeta ) {
-    this.executeCommand( dataAndMeta.data );
-    return dataAndMeta;
+  executeCommand( sessionData, data ) {
+    this.executeCommand( data );
+    return data;
   },
 
   @dec.wrapInStreamSync
-  getCommandInfos( session, dataAndMeta ) {
-
-    const query = ( dataAndMeta.data.queryString || "" ).toLowerCase();
-    const data = Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
-
-    return { data }
+  getCommandInfos( sessionData, data ) {
+    const query = ( data.queryString || "" ).toLowerCase();
+    return Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
   },
 
   @dec.wrapInStreamSync
-  openExternal ( session, dataAndMeta ) {
-    open( dataAndMeta.data );
-    return dataAndMeta;
+  openExternal ( sessionData, data ) {
+    open( data );
+    return data;
   }
 
 };
