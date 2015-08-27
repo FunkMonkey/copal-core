@@ -16,6 +16,8 @@ function logWatchEvent( event ) {
 
 var GLOB_SCRIPTS =  "./src/**/*.js";
 var GLOB_CONFIGS =  "./src/**/*.json";
+var GLOB_HOOKS =  "./githooks/**/*";
+
 
 gulp.task( "build:scripts", function() {
   return gulp.src( GLOB_SCRIPTS )
@@ -31,7 +33,12 @@ gulp.task( "build:configs", function () {
              .pipe( gulp.dest( "build" ) );
 });
 
-gulp.task( "build", ["build:scripts", "build:configs"] );
+gulp.task( "build:hooks", function () {
+  return gulp.src( GLOB_HOOKS )
+             .pipe( gulp.dest( ".git/hooks" ) );
+});
+
+gulp.task( "build", ["build:scripts", "build:configs", "build:hooks"] );
 
 gulp.task( "watch:build", function ( ) {
   gulp.watch( GLOB_SCRIPTS, ["build:scripts"] )
@@ -39,4 +46,8 @@ gulp.task( "watch:build", function ( ) {
 
   gulp.watch( GLOB_CONFIGS, ["build:configs"] )
       .on( "change", logWatchEvent );
+
+  gulp.watch( GLOB_HOOKS, ["build:hooks"] )
+      .on( "change", logWatchEvent );
+
 });
