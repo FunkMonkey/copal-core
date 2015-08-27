@@ -12,6 +12,6 @@ if( lastCommits.length === 0 || hookUtils.commitMessage.hasType( lastCommits[0],
 
 var biggest = hookUtils.version.getBiggestVersionType( lastCommits );
 if( biggest !== "version" ) {
-  hookUtils.version.bumpVersion( biggest );
+  var newVersion = hookUtils.version.bumpVersion( biggest );
   console.log( "Bumped to version: " + newVersion );
 }
