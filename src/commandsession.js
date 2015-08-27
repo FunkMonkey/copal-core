@@ -46,7 +46,7 @@ export default class CommandSession {
     this.setNameAndErrorHandler( outputStream, "output" );
 
     // first pass: create the streams (necessary for cross-references)
-    _.mapValues( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
+    _.forIn( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
       if( RESERVED_STREAM_NAMES.indexOf( streamName ) !== -1 )
         throw new Error( `Stream name '${streamName}' is not allowed as the following stream names are reserved: ${RESERVED_STREAM_NAMES.join(",")}. ` );
 
@@ -57,7 +57,7 @@ export default class CommandSession {
     } );
 
     // second pass
-    _.mapValues( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
+    _.forIn( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
       var currStream = this._streams[streamName];
 
       streamConfig.forEach( ( brickConfig, index ) => {
@@ -71,7 +71,7 @@ export default class CommandSession {
     } );
 
     // connect to outputs
-    _.mapValues( this.bricks.outputBricks, (outBrick, outName) => {
+    _.forIn( this.bricks.outputBricks, (outBrick, outName) => {
       var lastOutput = outBrick( this );
       this.setNameAndErrorHandler( lastOutput, outName );
 
@@ -132,7 +132,7 @@ export default class CommandSession {
     // mainInputStream.on("pipe", (data) => console.log("INPUT got piped"));
 
     // inform inputs of this session
-    _.mapValues( this.bricks.inputBricks, input => input( this ).pipe( mainInputStream ) );
+    _.forIn( this.bricks.inputBricks, input => input( this ).pipe( mainInputStream ) );
 
     // push our first data: TODO only do if initialData exists
     var dataAndMeta = {
