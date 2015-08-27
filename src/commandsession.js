@@ -72,7 +72,7 @@ export default class CommandSession {
 
     // connect to outputs
     _.forIn( this.bricks.outputBricks, (outBrick, outName) => {
-      var lastOutput = outBrick( this );
+      var lastOutput = outBrick( { session: this } );
       this.setNameAndErrorHandler( lastOutput, outName );
 
       outputStream.pipe( lastOutput );
@@ -99,7 +99,8 @@ export default class CommandSession {
       throw new Error(`Brick '${brickConfig.longID}' does not exist!` );
 
     // TODO: handle errors and pipe them into the error stream
-    const brickStreams = brick( this, ...brickConfig.args );
+    const sessionData = { session: this };
+    const brickStreams = brick( sessionData, ...brickConfig.args );
 
     // do we get back a single stream or a sequence of streams?
     if( Array.isArray( brickStreams ) ) {
@@ -132,7 +133,7 @@ export default class CommandSession {
     // mainInputStream.on("pipe", (data) => console.log("INPUT got piped"));
 
     // inform inputs of this session
-    _.forIn( this.bricks.inputBricks, input => input( this ).pipe( mainInputStream ) );
+    _.forIn( this.bricks.inputBricks, input => input( { session: this } ).pipe( mainInputStream ) );
 
     const initialData = this.commandConfig.initialData;
 
