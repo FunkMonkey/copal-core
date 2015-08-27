@@ -61,49 +61,11 @@ export default class CommandSession {
       var currStream = this._streams[streamName];
 
       streamConfig.forEach( ( brickConfig, index ) => {
-
-        const longID = `${this.commandConfig.name}:${streamName}:${brickConfig.origString}`;
-
         // check for pipe bricks
         if( brickConfig.isPipe) {
-
-          if( index !== streamConfig.length - 1 )
-            throw new Error( `Pipe-bricks like '${longID}' must be the last element of a brick sequence!` );
-
-          const pipeStream = this._streams[ brickConfig.id ];
-
-          if( !pipeStream )
-            throw new Error( `Pipe-brick'${longID}' does not resolve to an existing stream!` );
-
-          currStream.pipe( pipeStream );
-          currStream = pipeStream;
+          currStream = this._handlePipeBrick( currStream, brickConfig, index, streamConfig, streamName );
         } else {
-          const brick = this.bricks.getTransformBrick( brickConfig.id );
-          if( !brick )
-            throw new Error(`Brick '${longID}' does not exist!` );
-
-          // TODO: handle errors and pipe them into the error stream
-          const brickStreams = brick( this, ...brickConfig.args );
-
-          // do we get back a single stream or a sequence of streams?
-          if( Array.isArray( brickStreams ) ) {
-            if( brickStreams.length < 2 )
-              throw new Error("Stream-Sequence needs at least two streams"); // TODO: better message
-
-            // pipe into the start of the sequence, use the last stream for later piping
-            const firstBrickStream = brickStreams[0];
-            this.setNameAndErrorHandler( firstBrickStream, brickConfig.id + "[first]" );
-            const lastBrickStream = brickStreams[ brickStreams.length - 1 ];
-            this.setNameAndErrorHandler( lastBrickStream, brickConfig.id + "[last]" );
-
-            currStream.pipe( firstBrickStream );
-            currStream = lastBrickStream;
-
-          } else {
-            this.setNameAndErrorHandler( brickStreams, brickConfig.id );
-            currStream.pipe( brickStreams );
-            currStream = brickStreams;
-          }
+          currStream = this._handleTransformBrick( currStream, brickConfig, index, streamConfig, streamName );
         }
       } );
     } );
@@ -115,6 +77,49 @@ export default class CommandSession {
 
       outputStream.pipe( lastOutput );
     });
+  }
+
+  _handlePipeBrick( currStream, brickConfig, index, streamConfig /*, streamName */ ) {
+    if( index !== streamConfig.length - 1 )
+      throw new Error( `Pipe-bricks like '${brickConfig.longID}' must be the last element of a brick sequence!` );
+
+    const pipeStream = this._streams[ brickConfig.id ];
+
+    if( !pipeStream )
+      throw new Error( `Pipe-brick'${brickConfig.longID}' does not resolve to an existing stream!` );
+
+    currStream.pipe( pipeStream );
+
+    return pipeStream;
+  }
+
+  _handleTransformBrick( currStream, brickConfig /*, index, streamConfig, streamName */ ) {
+    const brick = this.bricks.getTransformBrick( brickConfig.id );
+    if( !brick )
+      throw new Error(`Brick '${brickConfig.longID}' does not exist!` );
+
+    // TODO: handle errors and pipe them into the error stream
+    const brickStreams = brick( this, ...brickConfig.args );
+
+    // do we get back a single stream or a sequence of streams?
+    if( Array.isArray( brickStreams ) ) {
+      if( brickStreams.length < 2 )
+        throw new Error("Stream-Sequence needs at least two streams"); // TODO: better message
+
+      // pipe into the start of the sequence, use the last stream for later piping
+      const firstBrickStream = brickStreams[0];
+      this.setNameAndErrorHandler( firstBrickStream, brickConfig.id + "[first]" );
+      const lastBrickStream = brickStreams[ brickStreams.length - 1 ];
+      this.setNameAndErrorHandler( lastBrickStream, brickConfig.id + "[last]" );
+
+      currStream.pipe( firstBrickStream );
+      return lastBrickStream;
+
+    } else {
+      this.setNameAndErrorHandler( brickStreams, brickConfig.id );
+      currStream.pipe( brickStreams );
+      return brickStreams;
+    }
   }
 
   destroy() {

@@ -45,7 +45,9 @@ export default {
 
   _parseBrickString( brickString, cmdName, streamName ) {
 
-    const brickConfig = { origString: brickString };
+    const longID = `${cmdName}:${streamName}:${brickString}`;
+
+    const brickConfig = { longID, origString: brickString };
 
     // checking if we have a pipe brick; id currently still contains arguments
     if( brickString.indexOf( ">" ) === 0 ) {
