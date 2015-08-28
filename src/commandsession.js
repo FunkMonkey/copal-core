@@ -9,9 +9,9 @@ const RESERVED_STREAM_NAMES = [ "output" ];
 // TODO: make EventEmitter
 export default class CommandSession {
 
-  constructor(core, sessionID, origCommandConfig, bricks ) {
+  constructor(core, id, origCommandConfig, bricks ) {
 
-    this.sessionID = sessionID;
+    this.id = id;
     this.originalCommandConfig = origCommandConfig;
     this.bricks = bricks;
 
