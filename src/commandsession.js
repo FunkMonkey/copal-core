@@ -141,6 +141,16 @@ export default class CommandSession {
 
   }
 
+  pushIntoStream( streamName, data ) {
+    const stream = this._streams[streamName];
+
+    try {
+      stream.push( data );
+    } catch( error ) {
+      stream.emit( "error", error );
+    }
+  }
+
   execute() {
 
     const mainInputStream = this._streams[ "input" ];
@@ -152,12 +162,7 @@ export default class CommandSession {
     const initialData = this.commandConfig.initialData;
 
     if( initialData ) {
-      // TODO: find out why exceptions are not caught in the error event
-      try {
-        mainInputStream.push( initialData );
-      } catch( error ) {
-        this._streams["error"].push( error );
-      }
+      this.pushIntoStream( "input", initialData );
     }
   }
 
