@@ -20,19 +20,19 @@ const bricks = {
       };
   },
 
-  logErrorToConsole( error, dataAndMeta ) {
-    var errorData = getErrorData( error );
-    console.log( errorData.title + "\n" + errorData.stack );
-
-    return dataAndMeta;
-  },
-
   showErrorDialog( error, dataAndMeta ) {
     var errorData = getErrorData( error );
 
     dialog.showErrorBox( errorData.title, errorData.title + "\n\n" + errorData.stack );
 
     return dataAndMeta;
+  },
+
+  @dec.wrapInStreamSync
+  printErrorToConsole( sessionData, data ) {
+    const errorData = this.getErrorData( data );
+    console.error( errorData.title, "\n", errorData.stack );
+    return data;
   },
 
   @dec.wrapInStreamSync
@@ -56,10 +56,10 @@ const bricks = {
 };
 
 export default function ( copal ) {
-	// copal.bricks.addErrorBrick( logErrorToConsole );
-	// copal.bricks.addErrorBrick( showErrorDialog );
 
-	copal.bricks.addTransformBrick( "CoPal.getCommandInfos", bricks.getCommandInfos.bind( copal ) );
-	copal.bricks.addTransformBrick( "CoPal.executeCommand", bricks.executeCommand.bind( copal ) );
-	copal.bricks.addTransformBrick( "Common.open", bricks.openExternal );
+  copal.bricks.addErrorBrick( "CoPal.printErrorToConsole", bricks.printErrorToConsole.bind( bricks ) );
+
+  copal.bricks.addTransformBrick( "CoPal.getCommandInfos", bricks.getCommandInfos.bind( copal ) );
+  copal.bricks.addTransformBrick( "CoPal.executeCommand", bricks.executeCommand.bind( copal ) );
+  copal.bricks.addTransformBrick( "Common.open", bricks.openExternal );
 }

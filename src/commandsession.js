@@ -29,7 +29,10 @@ export default class CommandSession {
 
   setNameAndErrorHandler( stream, name ) {
     stream.streamName = name;
-    stream.on("error", error => console.error(name, error, error.stack));
+    stream.on("error", error => {
+      this._streams["error"].push( error );
+    });
+
     // stream.on("data", (data) => console.log(name, data));
     // stream.on("unpipe", (data) => console.log("UNPIPE", name, data));
     // stream.on("pipe", (data) => console.log("PIPE", name, data));
@@ -42,8 +45,19 @@ export default class CommandSession {
     // setting up streams
     this._streams = Object.create( null );
 
+
+    // connect to errors
+    const errorStream = this._streams[ "error" ] = new PassThrough( {objectMode: true} );
+    _.forIn( this.bricks.getErrorBricks(), (errorBrick) => {
+      const errStream = errorBrick.exec( { session: this } );
+
+      // TODO: what if there is an error in the error brick??
+      errorStream.pipe( errStream );
+    });
+
     const outputStream = this._streams[ "output" ] = new PassThrough( {objectMode: true} );
     this.setNameAndErrorHandler( outputStream, "output" );
+
 
     // first pass: create the streams (necessary for cross-references)
     _.forIn( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
@@ -138,7 +152,12 @@ export default class CommandSession {
     const initialData = this.commandConfig.initialData;
 
     if( initialData ) {
-      mainInputStream.push( initialData );
+      // TODO: find out why exceptions are not caught in the error event
+      try {
+        mainInputStream.push( initialData );
+      } catch( error ) {
+        this._streams["error"].push( error );
+      }
     }
   }
 
