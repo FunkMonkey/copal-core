@@ -1,0 +1,16 @@
+[
+  {
+    "name": "list-commands",
+
+    "displayName": "List Commands",
+
+    "environment": "gui",
+
+    "connections": {
+      "GUI.list:input-field": "commands:list-commands",
+      "GUI.list:list-item-execute": "commands:execute-command",
+      "commands:output": "GUI.list:show-list"
+    }
+
+  }
+]

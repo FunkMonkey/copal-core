@@ -1,4 +1,4 @@
-import CommandSession from "./commandsession";
+import CommandSession from "./command-session";
 // import ExamplePlugin from "./example/example-plugin";
 import Bricks from "./bricks";
 import path from "path";
@@ -7,6 +7,7 @@ import _ from "lodash";
 
 import initBasicBricks from "./basic-bricks";
 import BASIC_COMMANDS from "./basic-commands.json";
+import BASIC_UNITS from "./basic-units.json";
 import DEFAULT_SETTINGS from "./default-settings.json";
 
 export default class CopalCore {
@@ -26,7 +27,8 @@ export default class CopalCore {
    * Constructs a new CopalCore
    */
   constructor( startupArgs ) {
-    this.commands = {};
+    this.commandConfigs = {};
+    this.unitConfigs = {};
     this.bricks = new Bricks();
 
     this.startupArgs = startupArgs;
@@ -35,40 +37,48 @@ export default class CopalCore {
     this.settings = this.defaultifyOptions( this.settings, DEFAULT_SETTINGS );
 
     initBasicBricks( this );
-    BASIC_COMMANDS.forEach( command => this.addCommand( command ) );
+    BASIC_UNITS.forEach( unitConfig => this.addUnitConfig( unitConfig ) );
+    BASIC_COMMANDS.forEach( commandConfig => this.addCommandConfig( commandConfig ) );
 
-    var loadedCommands = this.loadProfileConfig( "commands.json") || [];
-    loadedCommands.forEach( command => this.addCommand( command ) );
+    // TODO: uncomment
+    // var loadedCommands = this.loadProfileConfig( "commands.json") || [];
+    // loadedCommands.forEach( command => this.addCommand( command ) );
 
     this.activeCommandSession = null;
   }
 
-  /**
-   * Adds the given command configuration with the given name.
-   * If no name is given, the name will be taken from the `name` property
-   * of the command configuration.
-   *
-   * @param   {Object}   commandConfig   Command configuration to add
-   * @param   {string}   [name]          Name to register this configuration as
-   */
-  addCommand( commandConfig, name ) {
-    if( !name )
-      name = commandConfig.name;
+  addCommandConfig( commandConfig ) {
+    if( this.commandConfigs[ commandConfig.name ] )
+      throw new Error( `A command with the name '${commandConfig.name}' already exists!` );
 
-    if( !name )
-      throw new Error( `A command with the name '${name}' already exists!` );
-
-    this.commands[ name ] = commandConfig;
+    this.commandConfigs[ commandConfig.name ] = commandConfig;
   }
 
-  getCommand( name ) {
+  getCommandConfig( name, throwIfNotFound ) {
 
-    var command = this.commands[ name ];
+    var commandConfig = this.commandConfigs[ name ];
 
-    if( !command )
+    if( !commandConfig && throwIfNotFound )
       throw new Error( `Command '${name}' does not exist!` );
 
-    return command;
+    return commandConfig;
+  }
+
+  addUnitConfig( unitConfig ) {
+    if( this.unitConfigs[ unitConfig.name ] )
+      throw new Error( `A unit with the name '${unitConfig.name}' already exists!` );
+
+    this.unitConfigs[ unitConfig.name ] = unitConfig;
+  }
+
+  getUnitConfig( name, throwIfNotFound ) {
+
+    var unitConfig = this.unitConfigs[ name ];
+
+    if( !unitConfig && throwIfNotFound )
+      throw new Error( `Unit '${name}' does not exist!` );
+
+    return unitConfig;
   }
 
   /**
@@ -78,18 +88,17 @@ export default class CopalCore {
    * @param  {Object}   [options]   Options passed to the command
    */
   executeCommand( name /*, options */ ) {
-    var command = this.commands[ name ];
+    var commandConfig = this.commandConfigs[ name ];
 
-    if( !command )
+    if( !commandConfig )
       throw new Error( `Command '${name}' does not exist!` );
 
     if( this.activeCommandSession )
       this.activeCommandSession.destroy();
 
-    ++CopalCore.lastCommandSessionID;
-
-    this.activeCommandSession = new CommandSession( this, CopalCore.lastCommandSessionID, command, this.bricks );
-    this.activeCommandSession.execute();
+    this.activeCommandSession = new CommandSession( this, name );
+    this.activeCommandSession.initialize();
+    this.activeCommandSession.start();
   }
 
   /**
@@ -152,5 +161,3 @@ export default class CopalCore {
     return Promise.resolve( true );
   }
 }
-
-CopalCore.lastCommandSessionID = 1;

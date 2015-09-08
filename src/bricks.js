@@ -1,3 +1,5 @@
+
+// TODO: rename to BrickCatalog
 export default class Bricks {
 
   constructor() {

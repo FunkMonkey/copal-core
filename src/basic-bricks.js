@@ -44,7 +44,7 @@ const bricks = {
   @dec.wrapInStreamSync
   getCommandInfos( sessionData, data ) {
     const query = ( data.queryString || "" ).toLowerCase();
-    return Object.keys( this.commands ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commands[cmd].hidden ).sort();
+    return Object.keys( this.commandConfigs ).filter( cmd => cmd.toLowerCase().indexOf(query) > -1 && !this.commandConfigs[cmd].hidden ).sort();
   },
 
   @dec.wrapInStreamSync

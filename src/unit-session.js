@@ -1,21 +1,24 @@
 // import CurriedSignal from "./utils/curried-signal";
 import _ from "lodash";
 import {PassThrough} from "stream";
-import CommandConfig from "./command-config";
+import UnitConfig from "./unit-config";
+import ID from "./ID";
 
-
-const RESERVED_STREAM_NAMES = [ "output" ];
+const RESERVED_STREAM_NAMES = [ "error" ];
 
 // TODO: make EventEmitter
-export default class CommandSession {
+export default class UnitSession {
 
-  constructor(core, id, origCommandConfig, bricks ) {
+  constructor( core, name ) {
 
-    this.id = id;
-    this.originalCommandConfig = origCommandConfig;
-    this.bricks = bricks;
+    this.id = ID( "unit-session" );
+    this.originalConfig = core.getUnitConfig( name, true );
 
-    this.create( core );
+    this.bricks = core.bricks;
+
+    this.config = UnitConfig.create( core, this.originalConfig );
+
+    this.createStreams( );
   }
 
   getStream( name ) {
@@ -38,13 +41,10 @@ export default class CommandSession {
     // stream.on("pipe", (data) => console.log("PIPE", name, data));
   }
 
-  create( core ) {
-    // this.commandConfig = this.resolveExtendedCommand( core, this.commandConfig );
-    this.commandConfig = CommandConfig.create( core, this.originalCommandConfig );
+  createStreams( ) {
 
     // setting up streams
     this._streams = Object.create( null );
-
 
     // connect to errors
     const errorStream = this._streams[ "error" ] = new PassThrough( {objectMode: true} );
@@ -55,12 +55,11 @@ export default class CommandSession {
       errorStream.pipe( errStream );
     });
 
-    const outputStream = this._streams[ "output" ] = new PassThrough( {objectMode: true} );
-    this.setNameAndErrorHandler( outputStream, "output" );
-
+    // const outputStream = this._streams[ "output" ] = new PassThrough( {objectMode: true} );
+    // this.setNameAndErrorHandler( outputStream, "output" );
 
     // first pass: create the streams (necessary for cross-references)
-    _.forIn( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
+    _.forIn( this.config.streamsWithArgs, (streamConfig, streamName) => {
       if( RESERVED_STREAM_NAMES.indexOf( streamName ) !== -1 )
         throw new Error( `Stream name '${streamName}' is not allowed as the following stream names are reserved: ${RESERVED_STREAM_NAMES.join(",")}. ` );
 
@@ -71,7 +70,7 @@ export default class CommandSession {
     } );
 
     // second pass
-    _.forIn( this.commandConfig.streamsWithArgs, (streamConfig, streamName) => {
+    _.forIn( this.config.streamsWithArgs, (streamConfig, streamName) => {
       var currStream = this._streams[streamName];
 
       streamConfig.forEach( ( brickConfig, index ) => {
@@ -83,14 +82,6 @@ export default class CommandSession {
         }
       } );
     } );
-
-    // connect to outputs
-    _.forIn( this.bricks.getOutputBricks(), (outBrick, outName) => {
-      var lastOutput = outBrick.exec( { session: this } );
-      this.setNameAndErrorHandler( lastOutput, outName );
-
-      outputStream.pipe( lastOutput );
-    });
   }
 
   _handlePipeBrick( currStream, brickConfig, index, streamConfig /*, streamName */ ) {
@@ -159,7 +150,7 @@ export default class CommandSession {
     // inform inputs of this session
     _.forIn( this.bricks.getInputBricks(), input => input.exec( { session: this } ).pipe( mainInputStream ) );
 
-    const initialData = this.commandConfig.initialData;
+    const initialData = this.config.initialData;
 
     if( initialData ) {
       this.pushIntoStream( "input", initialData );

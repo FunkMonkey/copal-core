@@ -3,16 +3,26 @@
     "name": "commands",
     "description": "Shows a list of available commands",
 
-    "initialData": {
-      "queryString": ""
+    "autostart": {
+      "list-commands": {
+        "queryString": ""
+      }
     },
 
-    "preferredInputs": [],
-    "preferredOutputs": [],
+    "streams": {
+      "list-commands": ["CoPal.getCommandInfos", "> output"],
+      "execute-command": ["CoPal.executeCommand"],
+      "output": []
+    }
+  },
+
+  {
+    "name": "GUI.list",
 
     "streams": {
-      "input": ["CoPal.getCommandInfos", "> output"],
-      "listitem-execute": ["CoPal.executeCommand"]
+      "input-field": [],
+      "list-item-execute": [],
+      "show-list": []
     }
   }
 ]
