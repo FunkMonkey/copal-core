@@ -21,13 +21,22 @@ export default class UnitSession {
     this.createStreams( );
   }
 
-  getStream( name ) {
+  getStreamStart( name ) {
     const stream = this._streams[name];
 
     if( !stream )
       throw new Error( `Stream '${name}' does not exist!` );
 
-    return stream;
+    return stream[0];
+  }
+
+  getStreamEnd( name ) {
+    const stream = this._streams[name];
+
+    if( !stream )
+      throw new Error( `Stream '${name}' does not exist!` );
+
+    return stream[ stream.length - 1 ];
   }
 
   setNameAndErrorHandler( stream, name ) {
@@ -47,16 +56,14 @@ export default class UnitSession {
     this._streams = Object.create( null );
 
     // connect to errors
-    const errorStream = this._streams[ "error" ] = new PassThrough( {objectMode: true} );
+    this._streams[ "error" ] = [new PassThrough( {objectMode: true} )];
+    const errorStream = this._streams[ "error" ][0];
     _.forIn( this.bricks.getErrorBricks(), (errorBrick) => {
       const errStream = errorBrick.exec( { session: this } );
 
       // TODO: what if there is an error in the error brick??
       errorStream.pipe( errStream );
     });
-
-    // const outputStream = this._streams[ "output" ] = new PassThrough( {objectMode: true} );
-    // this.setNameAndErrorHandler( outputStream, "output" );
 
     // first pass: create the streams (necessary for cross-references)
     _.forIn( this.config.streamsWithArgs, (streamConfig, streamName) => {
@@ -66,12 +73,12 @@ export default class UnitSession {
       const stream = new PassThrough( {objectMode: true} );
       this.setNameAndErrorHandler( stream, streamName );
 
-      this._streams[streamName] = stream;
+      this._streams[streamName] = [stream];
     } );
 
     // second pass
     _.forIn( this.config.streamsWithArgs, (streamConfig, streamName) => {
-      var currStream = this._streams[streamName];
+      var currStream = this._streams[streamName][0];
 
       streamConfig.forEach( ( brickConfig, index ) => {
         // check for pipe bricks
@@ -80,6 +87,8 @@ export default class UnitSession {
         } else {
           currStream = this._handleTransformBrick( currStream, brickConfig, index, streamConfig, streamName );
         }
+
+        this._streams[streamName].push( currStream );
       } );
     } );
   }
@@ -88,7 +97,7 @@ export default class UnitSession {
     if( index !== streamConfig.length - 1 )
       throw new Error( `Pipe-bricks like '${brickConfig.longID}' must be the last element of a brick sequence!` );
 
-    const pipeStream = this._streams[ brickConfig.id ];
+    const pipeStream = this._streams[ brickConfig.id ][0];
 
     if( !pipeStream )
       throw new Error( `Pipe-brick'${brickConfig.longID}' does not resolve to an existing stream!` );
@@ -133,7 +142,7 @@ export default class UnitSession {
   }
 
   pushIntoStream( streamName, data ) {
-    const stream = this._streams[streamName];
+    const stream = this.getStreamStart( streamName );
 
     try {
       stream.push( data );
@@ -142,19 +151,19 @@ export default class UnitSession {
     }
   }
 
-  execute() {
-
-    const mainInputStream = this._streams[ "input" ];
-    // mainInputStream.on("pipe", (data) => console.log("INPUT got piped"));
-
-    // inform inputs of this session
-    _.forIn( this.bricks.getInputBricks(), input => input.exec( { session: this } ).pipe( mainInputStream ) );
-
-    const initialData = this.config.initialData;
-
-    if( initialData ) {
-      this.pushIntoStream( "input", initialData );
-    }
-  }
+  // execute() {
+  //
+  //   const mainInputStream = this._streams[ "input" ];
+  //   // mainInputStream.on("pipe", (data) => console.log("INPUT got piped"));
+  //
+  //   // inform inputs of this session
+  //   _.forIn( this.bricks.getInputBricks(), input => input.exec( { session: this } ).pipe( mainInputStream ) );
+  //
+  //   const initialData = this.config.initialData;
+  //
+  //   if( initialData ) {
+  //     this.pushIntoStream( "input", initialData );
+  //   }
+  // }
 
 }

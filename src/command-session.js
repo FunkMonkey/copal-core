@@ -44,8 +44,8 @@ export default class CommandSession {
       const srcUnitInfo = src.split( ":" );
       const destUnitInfo = dest.split( ":" );
 
-      const srcStream = this._unitSessions[ srcUnitInfo[0] ].getStream( srcUnitInfo[1] );
-      const destStream = this._unitSessions[ destUnitInfo[0] ].getStream( destUnitInfo[1] );
+      const srcStream = this._unitSessions[ srcUnitInfo[0] ].getStreamEnd( srcUnitInfo[1] );
+      const destStream = this._unitSessions[ destUnitInfo[0] ].getStreamStart( destUnitInfo[1] );
       srcStream.pipe( destStream );
     } );
   }

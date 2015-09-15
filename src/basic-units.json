@@ -20,9 +20,9 @@
     "name": "GUI.list",
 
     "streams": {
-      "input-field": [],
-      "list-item-execute": [],
-      "show-list": []
+      "input-field": ["GUI.input"],
+      "list-item-execute": ["GUI.list-item-execute"],
+      "show-list": ["GUI.list-view"]
     }
   }
 ]
