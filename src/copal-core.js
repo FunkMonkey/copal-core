@@ -113,7 +113,7 @@ export default class CopalCore {
         if( this.settings.startupCommand )
           this.executeCommand( this.settings.startupCommand );
       } )
-      .catch( error => console.error( error, error.stack ) );
+      .catch( error => console.error( "", error.stack ) );
   }
 
   /**
