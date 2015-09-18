@@ -44,7 +44,7 @@ export default class Bricks {
     const brickInfo = this.brickMap[ id ];
 
     if( !brickInfo && throwIfNotExists )
-      throw new Error(`Brick with ID '${brickInfo.id}' does not exist!`);
+      throw new Error(`Brick with ID '${id}' does not exist!`);
 
     return  brickInfo || null;
   }
