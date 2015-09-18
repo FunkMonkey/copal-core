@@ -22,7 +22,7 @@ export default class CommandSession {
 
   _createUnitSession( name ) {
     if( !this._unitSessions[ name ] )
-      this._unitSessions[ name ] = new UnitSession( this.core, name );
+      this._unitSessions[ name ] = new UnitSession( this.core, name, this );
   }
 
   createUnitSessions() {

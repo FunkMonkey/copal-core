@@ -9,9 +9,11 @@ const RESERVED_STREAM_NAMES = [ "error" ];
 // TODO: make EventEmitter
 export default class UnitSession {
 
-  constructor( core, name ) {
+  constructor( core, name, commandSession ) {
 
     this.id = ID( "unit-session" );
+    this.commandSession = commandSession;
+
     this.originalConfig = core.getUnitConfig( name, true );
 
     this.bricks = core.bricks;
