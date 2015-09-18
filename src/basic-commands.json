@@ -7,9 +7,10 @@
     "environment": "gui",
 
     "connections": {
+      "commands:input": "GUI.list:update-input-field",
       "GUI.list:input-field": "commands:list-commands",
-      "GUI.list:list-item-execute": "commands:execute-command",
-      "commands:output": "GUI.list:show-list"
+      "commands:list-commands": "GUI.list:show-list",
+      "GUI.list:list-item-execute": "commands:execute-command"
     }
 
   }

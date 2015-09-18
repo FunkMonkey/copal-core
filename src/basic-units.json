@@ -4,15 +4,15 @@
     "description": "Shows a list of available commands",
 
     "autostart": {
-      "list-commands": {
+      "input": {
         "queryString": ""
       }
     },
 
     "streams": {
-      "list-commands": ["CoPal.getCommandInfos", "> output"],
-      "execute-command": ["CoPal.executeCommand"],
-      "output": []
+      "input": ["> list-commands"],
+      "list-commands": ["CoPal.getCommandInfos"],
+      "execute-command": ["CoPal.executeCommand"]
     }
   },
 
@@ -20,6 +20,7 @@
     "name": "GUI.list",
 
     "streams": {
+      "update-input-field": ["GUI.updateInputField"],
       "input-field": ["GUI.input"],
       "list-item-execute": ["GUI.list-item-execute"],
       "show-list": ["GUI.list-view"]
