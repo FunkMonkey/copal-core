@@ -1,15 +1,45 @@
 [
+
+  {
+    "name": "commands",
+    "description": "Shows a list of available commands",
+
+    "stream-connections": {
+    },
+
+    "streams": {
+      "get-commands": ["CoPal.getCommandInfos", "Common.debug"],
+      "execute-command": ["CoPal.executeCommand"]
+    }
+  },
+
   {
     "name": "list-commands",
 
     "displayName": "List Commands",
 
+    "groups": ["gui"],
+
     "environment": "gui",
 
-    "connections": {
+    "initialData": {
+      "queryString": ""
+    },
+
+    "stream-connections": {
+      "autostart": "commands::get-commands",
+      "commands::get-commands": "log"
+    },
+
+    "streams": {
+      "autostart": ["Common.autostart", "Common.getFromConfig( 'initialData' )", "Common.debug"],
+      "log": ["Common.debug"]
+    },
+
+    "oops": {
       "commands:input": "GUI.list:update-input-field",
-      "GUI.list:input-field": "commands:list-commands",
-      "commands:list-commands": "GUI.list:show-list",
+      "GUI.list:input-field": "commands:get-commands",
+      "commands:get-commands": "GUI.list:show-list",
       "GUI.list:list-item-execute": "commands:execute-command"
     }
 

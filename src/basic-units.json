@@ -4,14 +4,19 @@
     "description": "Shows a list of available commands",
 
     "autostart": {
-      "input": {
+      "list-commands": {
         "queryString": ""
       }
     },
 
+    "connections": {
+      "input": "list-commands"
+    },
+
     "streams": {
-      "input": ["> list-commands"],
-      "list-commands": ["CoPal.getCommandInfos"],
+      "log": ["CoPal.printErrorToConsole"],
+      "input": ["Common.useInitialData", "> list-commands"],
+      "list-commands": ["Common.useInitialData", "CoPal.getCommandInfos"],
       "execute-command": ["CoPal.executeCommand"]
     }
   },

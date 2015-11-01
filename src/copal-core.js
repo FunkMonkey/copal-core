@@ -7,7 +7,6 @@ import _ from "lodash";
 
 import initBasicBricks from "./basic-bricks";
 import BASIC_COMMANDS from "./basic-commands.json";
-import BASIC_UNITS from "./basic-units.json";
 import DEFAULT_SETTINGS from "./default-settings.json";
 
 export default class CopalCore {
@@ -37,7 +36,6 @@ export default class CopalCore {
     this.settings = this.defaultifyOptions( this.settings, DEFAULT_SETTINGS );
 
     initBasicBricks( this );
-    BASIC_UNITS.forEach( unitConfig => this.addUnitConfig( unitConfig ) );
     BASIC_COMMANDS.forEach( commandConfig => this.addCommandConfig( commandConfig ) );
 
     // TODO: uncomment
@@ -64,23 +62,6 @@ export default class CopalCore {
     return commandConfig;
   }
 
-  addUnitConfig( unitConfig ) {
-    if( this.unitConfigs[ unitConfig.name ] )
-      throw new Error( `A unit with the name '${unitConfig.name}' already exists!` );
-
-    this.unitConfigs[ unitConfig.name ] = unitConfig;
-  }
-
-  getUnitConfig( name, throwIfNotFound ) {
-
-    var unitConfig = this.unitConfigs[ name ];
-
-    if( !unitConfig && throwIfNotFound )
-      throw new Error( `Unit '${name}' does not exist!` );
-
-    return unitConfig;
-  }
-
   /**
    * Executes the given command.
    *
@@ -94,11 +75,11 @@ export default class CopalCore {
       throw new Error( `Command '${name}' does not exist!` );
 
     if( this.activeCommandSession )
-      this.activeCommandSession.destroy();
+      CommandSession.destroy( this.activeCommandSession );
 
-    this.activeCommandSession = new CommandSession( this, name );
-    this.activeCommandSession.initialize();
-    this.activeCommandSession.start();
+    this.activeCommandSession = CommandSession.create( null, this, commandConfig );
+    CommandSession.initialize( this.activeCommandSession );
+    CommandSession.start( this.activeCommandSession );
   }
 
   /**
