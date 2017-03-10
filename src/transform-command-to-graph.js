@@ -1,4 +1,5 @@
 import jsoToReactiveGraph from 'jsobject-to-reactive-graph';
+
 const { transformers } = jsoToReactiveGraph;
 
 function addMetaInfo( node ) {
@@ -13,14 +14,14 @@ function addMetaInfo( node ) {
 
 export default function ( command ) {
   const graph = jsoToReactiveGraph.convertToGraph( command,
-    [transformers.graph.components,
-     transformers.graph.componentMacros,
-     transformers.graph.pipegroups],
-    [transformers.node.valueFromArray,
-     transformers.node.appendOperatorToID,
-     transformers.node.components,
-     transformers.node.pipegroups,
-     addMetaInfo ] );
+    [ transformers.graph.components,
+      transformers.graph.componentMacros,
+      transformers.graph.pipegroups],
+    [ transformers.node.valueFromArray,
+      transformers.node.appendOperatorToID,
+      transformers.node.components,
+      transformers.node.pipegroups,
+      addMetaInfo ] );
 
   return graph;
 }
