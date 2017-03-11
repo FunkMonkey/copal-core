@@ -1,14 +1,23 @@
+import R from 'ramda';
 import Rx from 'rx';
 import reactiveGraph from 'reactive-graph';
 import transformCommandToGraph from './transform-command-to-graph';
+import getBasicOperators from './basic-operators';
+import BASIC_COMMANDS from './basic-commands.json';
 
 export default class Core {
   constructor( drivers ) {
     this.drivers = drivers;
+    this.settings = null;
+    this.operators = {};
+    this.commandConfigs = [];
   }
 
   init() {
-    const settings$ = this.drivers.profileSettings.get( 'settings' )
+    this.addOperators( getBasicOperators( this ) );
+    this.commandConfigs = R.unnest( [ this.commandConfigs, BASIC_COMMANDS ] );
+
+    const settings$ = this.drivers.profile.settings.get( 'settings' )
       .do( settings => { this.settings = settings; } );
 
 
@@ -25,16 +34,27 @@ export default class Core {
       .map( extFunc => extFunc( this ) );
   }
 
-  addCommand( command ) {
-
+  addCommandConfig( commandConfig ) {
+    this.commandConfigs.push( commandConfig );
   }
 
-  addOperator( operator ) {
+  addOperator( name, operator ) {
+    this.operators[ name ] = operator;
+  }
 
+  addOperators( operators ) {
+    R.pipe(
+      R.toPairs,
+      R.map( opPair => this.addOperator( opPair[0], opPair[1] ) )
+    )( operators );
   }
 
   getCommand( name ) {
 
+  }
+
+  getCommandConfigs() {
+    return this.commandConfigs;
   }
 
   getCommandGraph( commandConfig ) {
@@ -50,12 +70,18 @@ export default class Core {
     let operatorName = operatorConfig.operator;
     const args = operatorConfig.args;
 
-    // differentiate between static and instance operators
-    if ( operatorName.startsWith( 'Observable.' ) ) {
+    // custom operators
+    if ( operatorName in this.operators ) {
+      return this.operators[ operatorName ]( sources, args, operatorConfig );
+
+    // Rx static operators
+    } else if ( operatorName.startsWith( 'Observable.' ) ) {
       operatorName = operatorName.substr( 11 );
 
       // passing the sources (for 'merge', 'concat', etc.)
       return Rx.Observable[ operatorName ]( ...sources, ...args );
+
+    // Rx non-static operators
     } else {
       const source = sources[0];
       const restSources = sources.splice( 1 );
@@ -73,5 +99,10 @@ export default class Core {
       graph,
       operators: reactiveGraph.run( graph, this.insertOperator.bind( this ) )
     };
+  }
+
+  executeCommand( commandName ) {
+    const commandConfig = R.find( R.propEq( 'name', commandName ) )( this.commandConfigs );
+    return this.executeCommandConfig( commandConfig );
   }
 }

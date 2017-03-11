@@ -1,0 +1,27 @@
+{
+  "name": "commands",
+  "description": "Shows a list of available commands",
+
+  "components": {
+
+    "core": {
+      "pipegroups": {
+        "commandsNames$": [
+          [ ["launcher::query$"], "core.getCommandNames"]
+        ]
+      }
+    },
+
+    "launcher": {
+      "pipegroups": {
+        "query$": [
+          [ null, "launcher.fromInput" ]
+        ],
+        "output$": [
+          [ ["core::commandsNames$"], "launcher.render"]
+        ]
+      }
+    }
+
+  }
+}

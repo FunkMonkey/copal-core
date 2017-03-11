@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "jsobject-to-reactive-graph": "0.2.1",
+    "ramda": "0.21.0",
     "reactive-graph": "0.2.2",
     "rx": "4.1.0"
   }
