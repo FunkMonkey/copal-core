@@ -105,4 +105,12 @@ export default class Core {
     const commandConfig = R.find( R.propEq( 'name', commandName ) )( this.commandConfigs );
     return this.executeCommandConfig( commandConfig );
   }
+
+  disposeCommand( commandGraph ) {
+    // TODO: use forEachObjIndexed from new Ramda
+    R.map( obs => {
+      if ( !Rx.Observable.isObservable( obs ) && Rx.Disposable.isDisposable( obs ) )
+        obs.dispose();
+    }, commandGraph.operators );
+  }
 }
