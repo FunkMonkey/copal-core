@@ -5,6 +5,8 @@ export default function ( copal ) {
         .map( query => query.toLowerCase() )
         .map( query => copal.getCommandConfigs()
           .filter( cmd => cmd.name.toLowerCase().indexOf( query ) > -1 )
-          .map( cmd => cmd.name ) )
+          .map( cmd => cmd.name ) ),
+    'core.executeCommand': ( [ commandName$ ] ) =>
+      commandName$.map( commandName => copal.executeCommand( commandName ) )
   };
 }

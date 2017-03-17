@@ -1,27 +1,43 @@
-{
-  "name": "commands",
-  "description": "Shows a list of available commands",
+[
+  {
+    "name": "commands",
+    "description": "Shows a list of available commands",
 
-  "components": {
+    "components": {
 
-    "core": {
-      "pipegroups": {
-        "commandsNames$": [
-          [ ["launcher::query$"], "core.getCommandNames"]
-        ]
+      "core": {
+        "pipegroups": {
+          "commandsNames$": [
+            [ ["launcher::query$"], "core.getCommandNames"]
+          ]
+        }
+      },
+
+      "launcher": {
+        "pipegroups": {
+
+          "query$": [
+            [ null, "launcher.fromInput" ]
+          ],
+
+          "output$": [
+            [ ["core::commandsNames$"], "launcher.render"]
+          ],
+
+          "chosenCommand$": [
+            [ null, "launcher.listview.chosen"]
+          ],
+
+          "executeCommand$": [
+            [ ["chosenCommand$"], "launcher.executeCommand" ],
+            [ null, "subscribe" ]
+          ]
+        }
       }
-    },
 
-    "launcher": {
-      "pipegroups": {
-        "query$": [
-          [ null, "launcher.fromInput" ]
-        ],
-        "output$": [
-          [ ["core::commandsNames$"], "launcher.render"]
-        ]
-      }
     }
-
+  },
+  {
+    "name": "foobar"
   }
-}
+]
