@@ -1,5 +1,5 @@
 import R from 'ramda';
-import Rx from 'rx';
+import Rx from 'rxjs/Rx';
 import reactiveGraph from 'reactive-graph';
 import transformCommandToGraph from './transform-command-to-graph';
 import getBasicOperators from './basic-operators';
