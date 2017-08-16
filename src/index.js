@@ -3,7 +3,6 @@ import Rx from 'rxjs/Rx';
 import reactiveGraph from 'reactive-graph';
 import transformCommandToGraph from './transform-command-to-graph';
 import getBasicOperators from './basic-operators';
-import BASIC_COMMANDS from './basic-commands.json';
 
 export default class Core {
   constructor( drivers ) {
@@ -15,7 +14,6 @@ export default class Core {
 
   init() {
     this.addOperators( getBasicOperators( this ) );
-    this.commandConfigs = R.unnest( [ this.commandConfigs, BASIC_COMMANDS ] );
 
     const settings$ = this.drivers.profile.settings.get( 'settings' )
       .do( settings => { this.settings = settings; } );
@@ -36,6 +34,10 @@ export default class Core {
 
   addCommandConfig( commandConfig ) {
     this.commandConfigs.push( commandConfig );
+  }
+
+  addCommandConfigs( commandConfigs ) {
+    this.commandConfigs.push( ...commandConfigs );
   }
 
   addOperator( name, operator ) {
@@ -108,9 +110,9 @@ export default class Core {
 
   disposeCommand( commandGraph ) {
     // TODO: use forEachObjIndexed from new Ramda
-    R.map( obs => {
-      if ( !Rx.Observable.isObservable( obs ) && Rx.Disposable.isDisposable( obs ) )
-        obs.dispose();
+    R.map( obsOrSub => {
+      if ( typeof obsOrSub.unsubscribe === 'function' )
+        obsOrSub.unsubscribe();
     }, commandGraph.operators );
   }
 }
