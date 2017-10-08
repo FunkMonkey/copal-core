@@ -1,6 +1,17 @@
-import jsoToReactiveGraph from 'jsobject-to-reactive-graph';
+import R from 'ramda';
+import * as jsoToReactiveGraph from 'jsobject-to-reactive-graph';
 
-const { transformers } = jsoToReactiveGraph;
+const { transformers, utils } = jsoToReactiveGraph;
+
+function digestGraph( graph ) {
+  if ( graph.components ) {
+    graph.components = R.map( comp => {
+      const newComp = utils.ensureTransformLayer( comp );
+      newComp.pipegroups = comp;
+      return newComp;
+    }, graph.components );
+  }
+}
 
 function digestNode( node ) {
   if ( node.sources == null )
@@ -28,7 +39,8 @@ function addMetaInfo( node ) {
 
 export default function ( command ) {
   const graph = jsoToReactiveGraph.convertToGraph( command,
-    [ transformers.graph.components,
+    [ digestGraph,
+      transformers.graph.components,
       transformers.graph.componentMacros,
       transformers.graph.pipegroups],
     [ digestNode,

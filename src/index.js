@@ -111,7 +111,8 @@ export default class Core {
   disposeCommand( commandGraph ) {
     // TODO: use forEachObjIndexed from new Ramda
     R.map( obsOrSub => {
-      if ( typeof obsOrSub.unsubscribe === 'function' )
+      if ( typeof obsOrSub.unsubscribe === 'function' &&
+           typeof obsOrSub.subscribe !== 'function' )
         obsOrSub.unsubscribe();
     }, commandGraph.operators );
   }
