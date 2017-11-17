@@ -1,6 +1,16 @@
 import R from 'ramda';
 // import * as jsoToReactiveGraph from 'jsobject-to-reactive-graph';
 import graphlib from 'graphlib';
+import createCustomError from 'custom-error-generator';
+
+// custom-error-generator unfortunately overrides the message if strings or
+// numbers are passedas arguments
+const NodeAlreadyExistsError = createCustomError( 'NODE_ALREADY_EXISTS', null,
+  function construct( id ) { this.message = `Node with id '${id}' already exists`; } );
+const NodeDoesNotExistError = createCustomError( 'NODE_DOES_NOT_EXIST', null,
+  function construct( id ) { this.message = `Node with id '${id}' does not exist`; } );
+const EdgeAlreadyExistsError = createCustomError( 'EDGE_ALREADY_EXISTS', null,
+  function construct( from, to ) { this.message = `Edge between '${from}' and '${to}' already exists`; } );
 
 /*
 const { transformers, utils } = jsoToReactiveGraph;
@@ -85,16 +95,10 @@ function componentConfigToGraph( component ) {
   return graph;
 }
 
-// TODO: custom Errors using custom-error-generator
-class NodeAlreadyExistsError {}
-class NodeDoesNotExistError {}
-class EdgeAlreadyExistsError {}
-
-
 function copyNodesInto( fromGraph, toGraph ) {
   R.forEachObjIndexed( ( nodeValue, nodeID ) => {
     if ( toGraph.hasNode( nodeID ) )
-      throw new NodeAlreadyExistsError();
+      throw new NodeAlreadyExistsError( nodeID );
     toGraph.setNode( nodeID, nodeValue );
   }, fromGraph._nodes );
 }
@@ -102,13 +106,13 @@ function copyNodesInto( fromGraph, toGraph ) {
 function copyEdgesInto( fromGraph, toGraph ) {
   R.forEachObjIndexed( edgeObj => {
     if ( !toGraph.hasNode( edgeObj.v ) )
-      throw new NodeDoesNotExistError(); // TODO Error messages
+      throw new NodeDoesNotExistError( edgeObj.v ); // TODO Error messages
 
     if ( !toGraph.hasNode( edgeObj.w ) )
-      throw new NodeDoesNotExistError();
+      throw new NodeDoesNotExistError( edgeObj.w );
 
     if ( toGraph.hasEdge( edgeObj ) )
-      throw new EdgeAlreadyExistsError();
+      throw new EdgeAlreadyExistsError( edgeObj.v, edgeObj.w );
 
     toGraph.setEdge( edgeObj, fromGraph.edge( edgeObj ) );
   }, fromGraph._edgeObjs );
@@ -124,10 +128,13 @@ function mergeGraphs( graphs, connections ) {
   R.forEachObjIndexed( graph => copyGraphInto( graph, mergedGraph ), graphs );
   R.forEachObjIndexed( ( to, from ) => {
     if ( !mergedGraph.hasNode( to ) )
-      throw new NodeDoesNotExistError(); // TODO Error messages
+      throw new NodeDoesNotExistError( to );
 
     if ( !mergedGraph.hasNode( from ) )
-      throw new NodeDoesNotExistError();
+      throw new NodeDoesNotExistError( from );
+
+    if ( mergedGraph.hasEdge( { v: from, w: to } ) )
+      throw new EdgeAlreadyExistsError( from, to );
 
     mergedGraph.setEdge( from, to );
   }, connections );
