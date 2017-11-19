@@ -6,11 +6,12 @@ export default function ( copal ) {
     'core.getCommandNames': ( [ query$ ] ) =>
       query$
         .map( query => query.toLowerCase() )
-        .map( query => R.values( copal.getCommandConfigs() )
-          .filter( cmd => cmd.name.toLowerCase().indexOf( query ) > -1 )
-          .map( cmd => cmd.name ) ),
+        .map( query => R.values( copal.getGraphTemplates() )
+          .filter( template => !template.hidden )
+          .filter( template => template.name.toLowerCase().indexOf( query ) > -1 )
+          .map( template => template.name ) ),
 
-    'core.executeCommand': ( [ commandName$ ] ) =>
-      commandName$.map( commandName => copal.executeCommand( commandName ) )
+    'core.executeCommandGraph': ( [ commandName$ ] ) =>
+      commandName$.map( commandName => copal.executeCommandGraph( commandName ) )
   };
 }

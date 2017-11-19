@@ -1,16 +1,17 @@
 import R from 'ramda';
 import Rx from 'rxjs/Rx';
 import reactiveGraph from 'reactive-graph';
-import transformCommandToGraph from './transform-command-to-graph';
+import transformTemplatesToGraph from './transform-templates-to-graph';
 import getBasicOperators from './basic-operators';
+import { getNodeType, UnknownNodeTypeError } from './graph-utils';
+
 
 export default class Core {
   constructor( drivers ) {
     this.drivers = drivers;
     this.settings = null;
     this.operators = {};
-    this.componentConfigs = {};
-    this.commandConfigs = {};
+    this.graphTemplates = {};
   }
 
   init() {
@@ -33,20 +34,12 @@ export default class Core {
       .map( extFunc => extFunc( this ) );
   }
 
-  addComponentConfig( componentConfig ) {
-    this.componentConfigs[componentConfig.name] = componentConfig;
+  addGraphTemplate( graphTemplate ) {
+    this.graphTemplates[graphTemplate.name] = graphTemplate;
   }
 
-  addComponentConfigs( componentConfigs ) {
-    componentConfigs.forEach( config => this.addComponentConfig( config ) );
-  }
-
-  addCommandConfig( commandConfig ) {
-    this.commandConfigs[commandConfig.name] = commandConfig;
-  }
-
-  addCommandConfigs( commandConfigs ) {
-    commandConfigs.forEach( config => this.addCommandConfig( config ) );
+  addGraphTemplates( graphTemplates ) {
+    graphTemplates.forEach( config => this.addGraphTemplate( config ) );
   }
 
   addOperator( name, operator ) {
@@ -64,12 +57,12 @@ export default class Core {
 
   }
 
-  getCommandConfigs() {
-    return this.commandConfigs;
+  getGraphTemplates() {
+    return this.graphTemplates;
   }
 
-  getCommandGraph( commandConfig ) {
-    return transformCommandToGraph( commandConfig, { componentConfigs: this.componentConfigs } );
+  getCommandGraph( graphTemplate ) {
+    return transformTemplatesToGraph( graphTemplate, { graphTemplates: this.graphTemplates } );
   }
 
   // Simple inserter that will be called for every operator.
@@ -93,46 +86,54 @@ export default class Core {
       return Rx.Observable[ operatorName ]( ...sources, ...args );
 
     // Rx non-static operators
-    } else {
-      const source = sources[0];
-      const restSources = sources.splice( 1 );
-      return source[ operatorName ]( ...restSources, ...args );
     }
+
+    const source = sources[0];
+    const restSources = sources.splice( 1 );
+    return source[ operatorName ]( ...restSources, ...args );
   }
 
   insertNode( id, nodeConfig, sources ) {
-    if ( nodeConfig.input || nodeConfig.output )
-      return ( sources.length === 1 ) ? sources[0] : Rx.Observable.merge( ...sources );
-    else if ( nodeConfig.operator )
-      return this.insertOperator( id, nodeConfig, sources );
+    const nodeType = getNodeType( nodeConfig );
 
-    // TODO: custom error
-    throw new Error( `Node '${id}' has an unknown node type!` );
+    switch ( nodeType ) {
+      case 'from-input':
+      case 'to-output':
+      case 'to-subgraph-input':
+      case 'from-subgraph-output': {
+        return ( sources.length === 1 ) ? sources[0] : Rx.Observable.merge( ...sources );
+      }
+      case 'operator': {
+        return this.insertOperator( id, nodeConfig, sources );
+      }
+      default: throw new UnknownNodeTypeError( nodeType );
+    }
   }
 
-  executeCommandConfig( commandConfig ) {
-    const graph = this.getCommandGraph( commandConfig );
+  executeGraphTemplate( graphTemplate ) {
+    const graph = this.getCommandGraph( graphTemplate );
 
     // const topsortedNodes = reactiveGraph.getTopsortedNodes( graph );
     // reactiveGraph.connectRxOperators( topsortedNodes, insertOperator );
     return {
-      config: commandConfig,
+      config: graphTemplate,
       graph,
       operators: reactiveGraph.run( graph, this.insertNode.bind( this ) )
     };
   }
 
-  executeCommand( commandName ) {
-    const commandConfig = this.commandConfigs[ commandName ];
-    return this.executeCommandConfig( commandConfig );
+  executeCommandGraph( commandName ) {
+    const graphTemplate = this.graphTemplates[ commandName ];
+    return this.executeGraphTemplate( graphTemplate );
   }
 
-  disposeCommand( commandGraph ) {
+  // eslint-disable-next-line class-methods-use-this
+  disposeCommandGraph( aReactiveGraph ) {
     // TODO: use forEachObjIndexed from new Ramda
-    R.map( obsOrSub => {
+    R.forEachObjIndexed( obsOrSub => {
       if ( typeof obsOrSub.unsubscribe === 'function' &&
            typeof obsOrSub.subscribe !== 'function' )
         obsOrSub.unsubscribe();
-    }, commandGraph.operators );
+    }, aReactiveGraph.operators );
   }
 }
