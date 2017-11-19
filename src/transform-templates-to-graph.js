@@ -1,7 +1,7 @@
 import R from 'ramda';
 import graphlib from 'graphlib';
-import { copyGraphInto, getNodeType, getNodeInfo,
-         NodeDoesNotExistError, UnknownNodeTypeError } from './graph-utils';
+import { copyGraphInto, getNodeType, getNodeInfo } from './graph-utils';
+import { NodeDoesNotExistError, UnknownNodeTypeError, GraphTemplateDoesNotExistError } from './errors';
 
 
 
@@ -13,9 +13,18 @@ function getUsedSubgraphTemplates( names, templates ) {
 function graphTemplateToGraph( graphTemplate, graphTemplates ) {
   const graph = new graphlib.Graph();
 
+  let extGraphTemplate = graphTemplate;
+  if ( graphTemplate.extends ) {
+    const gTemplateToExtend = graphTemplates[ graphTemplate.extends ];
+    if ( gTemplateToExtend == null )
+      throw new GraphTemplateDoesNotExistError( graphTemplate.extends );
+    extGraphTemplate = R.merge( gTemplateToExtend, graphTemplate );
+  }
+
   // getting and merging subgraphs
-  if ( graphTemplate.subgraphs ) {
-    const subgraphTemplates = getUsedSubgraphTemplates( graphTemplate.subgraphs, graphTemplates );
+  if ( extGraphTemplate.subgraphs ) {
+    const subgraphTemplates = getUsedSubgraphTemplates( extGraphTemplate.subgraphs,
+                                                        graphTemplates );
     const subgraphs = R.map( graphTemplateToGraph, subgraphTemplates );
     R.forEachObjIndexed( subgraph => copyGraphInto( subgraph, graph ), subgraphs );
   }
@@ -28,13 +37,13 @@ function graphTemplateToGraph( graphTemplate, graphTemplates ) {
 
       switch ( nodeType ) {
         case 'from-input': {
-          const nodeID = `${graphTemplate.name}::${nodeInfo}`;
+          const nodeID = `${extGraphTemplate.name}::${nodeInfo}`;
           graph.setNode( nodeID, nodeValue );
           info.prevID = nodeID;
           break;
         }
         case 'to-output': {
-          const nodeID = `${graphTemplate.name}::${nodeInfo}`;
+          const nodeID = `${extGraphTemplate.name}::${nodeInfo}`;
           graph.setNode( nodeID, nodeValue );
           if ( info.prevID )
             graph.setEdge( info.prevID, nodeID, 0 );
@@ -59,7 +68,7 @@ function graphTemplateToGraph( graphTemplate, graphTemplates ) {
           break;
         }
         case 'operator': {
-          const nodeID = `${graphTemplate.name}::${nodeGroupName}-${info.index}`;
+          const nodeID = `${extGraphTemplate.name}::${nodeGroupName}-${info.index}`;
           graph.setNode( nodeID, nodeValue );
           if ( info.prevID )
             graph.setEdge( info.prevID, nodeID, 0 );
@@ -73,7 +82,7 @@ function graphTemplateToGraph( graphTemplate, graphTemplates ) {
       return info;
     },
     { prevID: '', index: 0 },
-    nodeGroup ), graphTemplate.graph );
+    nodeGroup ), extGraphTemplate.graph );
   return graph;
 }
 

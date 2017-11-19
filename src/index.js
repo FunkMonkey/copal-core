@@ -3,7 +3,8 @@ import Rx from 'rxjs/Rx';
 import reactiveGraph from 'reactive-graph';
 import transformTemplatesToGraph from './transform-templates-to-graph';
 import getBasicOperators from './basic-operators';
-import { getNodeType, UnknownNodeTypeError } from './graph-utils';
+import { getNodeType } from './graph-utils';
+import { UnknownNodeTypeError } from './errors';
 
 
 export default class Core {
