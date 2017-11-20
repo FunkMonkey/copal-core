@@ -1,6 +1,6 @@
 import R from 'ramda';
 import Rx from 'rxjs/Rx';
-import reactiveGraph from 'reactive-graph';
+import reactiveGraphLib from 'reactive-graph';
 import transformTemplatesToGraph from './transform-templates-to-graph';
 import getBasicOperators from './basic-operators';
 import { getNodeType } from './graph-utils';
@@ -31,8 +31,8 @@ export default class Core {
   loadExtensions() {
     return Rx.Observable.from( this.settings.extensions.enabled )
       .map( extName => this.drivers.extensions.get( extName ) )
+      .map( extFunc => extFunc( this ) )
       .concatAll()
-      .map( extFunc => extFunc( this ) );
   }
 
   addGraphTemplate( graphTemplate ) {
@@ -68,7 +68,7 @@ export default class Core {
 
   // Simple inserter that will be called for every operator.
   // Expects an array with the operator's name as the first element.
-  insertOperator( id, operatorConfig, sources ) {
+  insertOperator( id, operatorConfig, sources, reactiveGraph ) {
     // let operatorName = operatorConfig[0];
     // const args = operatorConfig.splice( 1 );
 
@@ -77,7 +77,7 @@ export default class Core {
 
     // custom operators
     if ( operatorName in this.operators ) {
-      return this.operators[ operatorName ]( sources, args, operatorConfig );
+      return this.operators[ operatorName ]( sources, operatorConfig, reactiveGraph );
 
     // Rx static operators
     } else if ( operatorName.startsWith( 'Observable.' ) ) {
@@ -94,7 +94,7 @@ export default class Core {
     return source[ operatorName ]( ...restSources, ...args );
   }
 
-  insertNode( id, nodeConfig, sources ) {
+  insertNode( reactiveGraph, id, nodeConfig, sources ) {
     const nodeType = getNodeType( nodeConfig );
 
     switch ( nodeType ) {
@@ -105,7 +105,7 @@ export default class Core {
         return ( sources.length === 1 ) ? sources[0] : Rx.Observable.merge( ...sources );
       }
       case 'operator': {
-        return this.insertOperator( id, nodeConfig, sources );
+        return this.insertOperator( id, nodeConfig, sources, reactiveGraph );
       }
       default: throw new UnknownNodeTypeError( nodeType );
     }
@@ -114,13 +114,17 @@ export default class Core {
   executeGraphTemplate( graphTemplate ) {
     const graph = this.getCommandGraph( graphTemplate );
 
-    // const topsortedNodes = reactiveGraph.getTopsortedNodes( graph );
-    // reactiveGraph.connectRxOperators( topsortedNodes, insertOperator );
-    return {
-      config: graphTemplate,
+    const reactiveGraph = {
+      template: graphTemplate,
       graph,
-      operators: reactiveGraph.run( graph, this.insertNode.bind( this ) )
+      operators: null
     };
+
+    reactiveGraph.data = graphTemplate.data || {};
+    reactiveGraph.operators = reactiveGraphLib.run( graph,
+      this.insertNode.bind( this, reactiveGraph ) );
+
+    return reactiveGraph;
   }
 
   executeCommandGraph( commandName ) {
@@ -129,12 +133,12 @@ export default class Core {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  disposeCommandGraph( aReactiveGraph ) {
+  disposeCommandGraph( reactiveGraph ) {
     // TODO: use forEachObjIndexed from new Ramda
     R.forEachObjIndexed( obsOrSub => {
       if ( typeof obsOrSub.unsubscribe === 'function' &&
            typeof obsOrSub.subscribe !== 'function' )
         obsOrSub.unsubscribe();
-    }, aReactiveGraph.operators );
+    }, reactiveGraph.operators );
   }
 }
