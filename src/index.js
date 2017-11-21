@@ -1,6 +1,8 @@
 import R from 'ramda';
 import Rx from 'rxjs/Rx';
 import reactiveGraphLib from 'reactive-graph';
+import { PluginSystem } from 'reactive-plugin-system';
+
 import transformTemplatesToGraph from './transform-templates-to-graph';
 import getBasicOperators from './basic-operators';
 import { getNodeType } from './graph-utils';
@@ -13,26 +15,41 @@ export default class Core {
     this.settings = null;
     this.operators = {};
     this.graphTemplates = {};
+
+    const pluginLoader = id => this.drivers.plugins.load( id )
+      .map( factory => ( { id, factory } ) );
+
+    this.plugins = new PluginSystem( { data: this, loader: pluginLoader } )
   }
 
   init() {
     this.addOperators( getBasicOperators( this ) );
 
-    const settings$ = this.drivers.profile.settings.get( 'settings' )
-      .do( settings => { this.settings = settings; } );
+    const settings$ = this.loadSettings().share();
+    const plugins$ = this.loadPlugins( settings$ );
 
-
-    const extensions$ = settings$
-      .flatMap( () => this.loadExtensions() );
-
-    return extensions$.ignoreElements().share();
+    return plugins$.ignoreElements().share();
   }
 
-  loadExtensions() {
-    return Rx.Observable.from( this.settings.extensions.enabled )
-      .map( extName => this.drivers.extensions.get( extName ) )
-      .map( extFunc => extFunc( this ) )
-      .concatAll()
+  loadSettings() {
+    return this.drivers.profile.settings.get( 'settings' )
+      .do( settings => { this.settings = settings; } );
+  }
+
+  loadPlugins( settings$ ) {
+    const pluginsToLoad$ = settings$
+      .map( settings => settings.plugins.enabled )
+      .first()
+      .share();
+
+    const initiateLoading$ = pluginsToLoad$
+      .do( plugins => plugins.forEach( this.plugins.load.bind( this.plugins ) ) )
+      .ignoreElements();
+
+    const waitingForLoadingToFinish$ = pluginsToLoad$
+      .flatMap( pluginsToLoad => this.plugins.waitForAll( pluginsToLoad ) );
+
+    return Rx.Observable.concat( initiateLoading$, waitingForLoadingToFinish$ );
   }
 
   addGraphTemplate( graphTemplate ) {
