@@ -25,18 +25,18 @@ export default class Core {
   init() {
     this.addOperators( getBasicOperators( this ) );
 
-    const settings$ = this.loadSettings().share();
-    const plugins$ = this.loadPlugins( settings$ );
+    this.settings$ = this._loadSettings().share();
+    const plugins$ = this._loadPlugins( this.settings$ );
 
     return plugins$.ignoreElements().share();
   }
 
-  loadSettings() {
+  _loadSettings() {
     return this.drivers.profile.settings.get( 'settings' )
       .do( settings => { this.settings = settings; } );
   }
 
-  loadPlugins( settings$ ) {
+  _loadPlugins( settings$ ) {
     const pluginsToLoad$ = settings$
       .map( settings => settings.plugins.enabled )
       .first()
