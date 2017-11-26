@@ -6,7 +6,7 @@ export default function ( copal ) {
     'core.getCommandNames': ( [ query$ ] ) =>
       query$
         .map( query => query.toLowerCase() )
-        .map( query => R.values( copal.getGraphTemplates() )
+        .map( query => R.values( copal.commands.templates.getComponents() )
           .filter( template => !template.hidden &&
                                template.name.toLowerCase().indexOf( query ) > -1 )
           .map( template => template.name ) ),

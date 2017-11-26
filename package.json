@@ -28,11 +28,9 @@
     "gulp-util": "3.0.8"
   },
   "dependencies": {
-    "custom-error-generator": "7.0.0",
-    "graphlib": "2.1.0",
-    "jsobject-to-reactive-graph": "0.2.1",
     "ramda": "0.25.0",
-    "reactive-graph": "0.2.2",
+    "reactive-commands": "0.0.1",
+    "reactive-plugin-system": "0.0.1",
     "rxjs": "5.4.2"
   }
 }
