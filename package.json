@@ -28,6 +28,7 @@
     "gulp-util": "3.0.8"
   },
   "dependencies": {
+    "linkfs": "2.0.2",
     "ramda": "0.25.0",
     "reactive-commands": "0.0.1",
     "reactive-plugin-system": "0.0.1",

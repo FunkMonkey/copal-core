@@ -2,17 +2,18 @@ import Rx from 'rxjs/Rx';
 import { PluginSystem } from 'reactive-plugin-system';
 
 import getBasicOperators from './basic-operators';
+import ProfileManager from './profile-manager';
+import SettingsManager from './settings-manager';
 import CommandManager from './command-manager';
 
 export default class Core {
-  constructor( drivers ) {
-    this.drivers = drivers;
-    this.settings = null;
-
-
+  constructor( options ) {
+    this.profile = new ProfileManager( options.profile );
+    this.settings = new SettingsManager( this.profile );
+    this.coreSettings = null;
     this.commands = new CommandManager();
 
-    const pluginLoader = id => this.drivers.plugins.load( id )
+    const pluginLoader = id => options.getPluginFactory( id )
       .map( factory => ( { id, factory } ) );
 
     this.plugins = new PluginSystem( { data: this, loader: pluginLoader } );
@@ -21,21 +22,21 @@ export default class Core {
   init() {
     this.commands.connector.addOperators( getBasicOperators( this ) );
 
-    this.settings$ = this._loadSettings().share();
-    const plugins$ = this._loadPlugins( this.settings$ );
+    this.coreSettings$ = this._loadMainSettings().share();
+    const plugins$ = this._loadPlugins( this.coreSettings$ );
 
     // initialization is done once we loaded all plugins
     return plugins$.ignoreElements().share();
   }
 
-  _loadSettings() {
-    return this.drivers.profile.settings.get( 'settings' )
-      .do( settings => { this.settings = settings; } );
+  _loadMainSettings() {
+    return this.settings.get( '/settings' )
+      .do( coreSettings => { this.coreSettings = coreSettings; } );
   }
 
-  _loadPlugins( settings$ ) {
-    const pluginsToLoad$ = settings$
-      .map( settings => settings.plugins.enabled )
+  _loadPlugins( coreSettings$ ) {
+    const pluginsToLoad$ = coreSettings$
+      .map( coreSettings => coreSettings.plugins.enabled )
       .first()
       .share();
 
