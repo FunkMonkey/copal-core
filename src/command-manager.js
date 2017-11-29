@@ -1,15 +1,21 @@
+import R from 'ramda';
 import { Observable } from 'rxjs';
 import { ReactiveCommand, BasicConnector, BasicTemplateCreator } from 'reactive-commands';
 
 export default class CommandManager {
-  constructor() {
+  constructor( core ) {
+    this.core = core;
     this.connector = new BasicConnector( { Observable } );
     this.templates = new BasicTemplateCreator();
   }
 
-  instantiate( name ) {
+  instantiate( name, data ) {
     const template = this.templates.createTemplate( name );
-    return new ReactiveCommand( template, this.connector ).instantiate();
+    const mergedData = ( data == null ) ? template.data : R.merge( template.data, data );
+    const command = new ReactiveCommand( template.graph, mergedData, this.connector );
+    command.core = this.core;
+    command.instantiate();
+    return command;
   }
 
   // eslint-disable-next-line class-methods-use-this
