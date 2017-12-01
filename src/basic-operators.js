@@ -12,6 +12,8 @@ export default function ( copal ) {
           .map( template => template.name ) ),
 
     'core.executeCommandGraph': ( [ commandName$ ] ) =>
-      commandName$.map( commandName => copal.executeCommandGraph( commandName ) )
+      commandName$.map( commandName => copal.executeCommandGraph( commandName ) ),
+
+    'core.log': ( [ source$ ] ) => source$.do( val => console.log( val ) )
   };
 }
