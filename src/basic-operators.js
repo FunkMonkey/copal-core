@@ -1,5 +1,9 @@
 import R from 'ramda';
 
+function commandComparator( a, b ) {
+  return a.toLowerCase() > b.toLowerCase();
+}
+
 export default function ( copal ) {
   return {
 
@@ -9,7 +13,8 @@ export default function ( copal ) {
         .map( query => R.values( copal.commands.templates.getComponents() )
           .filter( template => !template.hidden &&
                                template.name.toLowerCase().indexOf( query ) > -1 )
-          .map( template => template.name ) ),
+          .map( template => template.name ) )
+        .map( R.sort( commandComparator ) ),
 
     'core.executeCommandGraph': ( [ commandName$ ] ) =>
       commandName$.map( commandName => copal.executeCommandGraph( commandName ) ),
