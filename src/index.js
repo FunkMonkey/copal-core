@@ -11,7 +11,7 @@ export default class Core {
     this.profile = new ProfileManager( options.profile );
     this.settings = new SettingsManager( this.profile );
     this.coreSettings = null;
-    this.commands = new CommandManager();
+    this.commands = new CommandManager( this );
 
     const pluginLoader = id => options.getPluginFactory( id )
       .map( factory => ( { id, factory } ) );
