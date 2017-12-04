@@ -1,4 +1,5 @@
-import Rx from 'rxjs/Rx';
+import R from 'ramda';
+import Rx from 'rxjs';
 import { PluginSystem } from 'reactive-plugin-system';
 
 import getBasicOperators from './basic-operators';
@@ -8,6 +9,7 @@ import CommandManager from './command-manager';
 
 export default class Core {
   constructor( options ) {
+    this._options = options;
     this.profile = new ProfileManager( options.profile );
     this.settings = new SettingsManager( this.profile );
     this.coreSettings = null;
@@ -37,6 +39,7 @@ export default class Core {
   _loadPlugins( coreSettings$ ) {
     const pluginsToLoad$ = coreSettings$
       .map( coreSettings => coreSettings.plugins.enabled )
+      .map( enabledPlugins => R.concat( enabledPlugins, this._options.additionalPlugins || [] ) )
       .first()
       .share();
 
