@@ -15,10 +15,7 @@ export default class Core {
     this.coreSettings = null;
     this.commands = new CommandManager( this );
 
-    const pluginLoader = id => options.getPluginFactory( id )
-      .map( factory => ( { id, factory } ) );
-
-    this.plugins = new PluginSystem( { data: this, loader: pluginLoader } );
+    this.plugins = new PluginSystem( { data: this, getFactory: options.getPluginFactory } );
   }
 
   init() {
@@ -43,13 +40,8 @@ export default class Core {
       .first()
       .share();
 
-    const initiateLoading$ = pluginsToLoad$
-      .do( plugins => plugins.forEach( this.plugins.load.bind( this.plugins ) ) )
+    return pluginsToLoad$
+      .flatMap( pluginsToLoad => this.plugins.loadAndWaitForAll( pluginsToLoad ) )
       .ignoreElements();
-
-    const waitingForLoadingToFinish$ = pluginsToLoad$
-      .flatMap( pluginsToLoad => this.plugins.waitForAll( pluginsToLoad ) );
-
-    return Rx.Observable.concat( initiateLoading$, waitingForLoadingToFinish$ );
   }
 }
