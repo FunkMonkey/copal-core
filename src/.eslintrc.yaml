@@ -1,5 +1,3 @@
   extends: "eslint-config-funkmonkey"
   env:
     node: true
-  rules:
-    function-paren-newline: ["error", "never"]
