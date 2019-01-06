@@ -31,6 +31,6 @@
     "ramda": "0.25.0",
     "reactive-commands": "0.0.1",
     "reactive-plugin-system": "0.0.1",
-    "rxjs": "5.4.2"
+    "rxjs": "6.3.3"
   }
 }

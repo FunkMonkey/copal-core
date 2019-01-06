@@ -1,8 +1,9 @@
 import R from 'ramda';
-import Rx from 'rxjs';
+import { first, flatMap, ignoreElements, map, share, tap } from 'rxjs/operators';
 import { PluginSystem } from 'reactive-plugin-system';
 
 import getBasicOperators from './basic-operators';
+import RX_OPERATORS from './rx-operators';
 import ProfileManager from './profile-manager';
 import SettingsManager from './settings-manager';
 import CommandManager from './command-manager';
@@ -19,29 +20,31 @@ export default class Core {
   }
 
   init() {
+    this.commands.connector.addOperators( RX_OPERATORS );
     this.commands.connector.addOperators( getBasicOperators( this ) );
 
-    this.coreSettings$ = this._loadMainSettings().share();
+    this.coreSettings$ = this._loadMainSettings().pipe( share() );
     const plugins$ = this._loadPlugins( this.coreSettings$ );
 
     // initialization is done once we loaded all plugins
-    return plugins$.ignoreElements().share();
+    return plugins$.pipe( ignoreElements(), share() );
   }
 
   _loadMainSettings() {
-    return this.settings.get( '/settings' )
-      .do( coreSettings => { this.coreSettings = coreSettings; } );
+    return this.settings.get( '/settings' ).pipe(
+      tap( coreSettings => { this.coreSettings = coreSettings; } )
+    );
   }
 
   _loadPlugins( coreSettings$ ) {
-    const pluginsToLoad$ = coreSettings$
-      .map( coreSettings => coreSettings.plugins.enabled )
-      .map( enabledPlugins => R.concat( enabledPlugins, this._options.additionalPlugins || [] ) )
-      .first()
-      .share();
+    const pluginsToLoad$ = coreSettings$.pipe(
+      map( coreSettings => coreSettings.plugins.enabled ),
+      map( enabledPlugins => R.concat( enabledPlugins, this._options.additionalPlugins || [] ) ),
+      first(),
+    );
 
-    return pluginsToLoad$
-      .flatMap( pluginsToLoad => this.plugins.loadAndWaitForAll( pluginsToLoad ) )
-      .ignoreElements();
+    return pluginsToLoad$.pipe(
+      flatMap( pluginsToLoad => this.plugins.loadAndWaitForAll( pluginsToLoad ) ),
+    );
   }
 }

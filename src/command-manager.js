@@ -1,11 +1,11 @@
 import R from 'ramda';
-import { Observable } from 'rxjs';
+import { merge, Observable } from 'rxjs';
 import { ReactiveCommand, BasicConnector, BasicTemplateCreator } from 'reactive-commands';
 
 export default class CommandManager {
   constructor( core ) {
     this.core = core;
-    this.connector = new BasicConnector( { Observable } );
+    this.connector = new BasicConnector( { Observable, merge } );
     this.templates = new BasicTemplateCreator();
   }
 
