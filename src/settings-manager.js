@@ -1,3 +1,5 @@
+/* eslint-disable global-require */
+/* eslint-disable import/no-dynamic-require */
 import path from 'path';
 import { Observable, bindNodeCallback } from 'rxjs';
 import { flatMap, map, tap } from 'rxjs/operators';
@@ -8,13 +10,11 @@ function getFileLoaders( fs ) {
   const readFileAsText = filePath => readFile( filePath, 'utf8' );
 
   const jsLoader = filePath => Observable.of( require( filePath ) );
-  const jsonLoader =
-    filePath => readFileAsText( filePath )
-      .pipe( map( content => JSON.parse( content ) ) );
+  const jsonLoader = filePath => readFileAsText( filePath )
+    .pipe( map( content => JSON.parse( content ) ) );
 
-  const yamlLoader =
-    filePath => readFileAsText( filePath )
-      .pipe( map( content => yaml.safeLoad( content ) ) );
+  const yamlLoader = filePath => readFileAsText( filePath )
+    .pipe( map( content => yaml.safeLoad( content ) ) );
 
   return {
     js: jsLoader,
@@ -37,22 +37,18 @@ export default class SettingsManager {
     const baseName = path.basename( name );
     // TODO: filter out directories
     const files$ = this._readdir( dirName ).pipe(
-      map( files =>
-        files.filter( file =>
-          path.basename( file, path.extname( file ) ) === baseName ) )
+      map( files => files.filter( file => path.basename( file, path.extname( file ) ) === baseName ) )
     );
 
     const exts$ = files$.pipe(
       map( files => files.map( path.extname )
-                         .map( ext => ext.substring( 1 ) ) ),
+        .map( ext => ext.substring( 1 ) ) ),
       tap( exts => {
-        if ( exts.length === 0 )
-          throw new Error( `Cannot retrieve settings for '${name}'. File does not exist!` );
+        if ( exts.length === 0 ) throw new Error( `Cannot retrieve settings for '${name}'. File does not exist!` );
       } ),
       map( exts => exts.filter( ext => ext in this._fileLoaders ) ),
       tap( exts => {
-        if ( exts.length === 0 )
-          throw new Error( `Cannot retrieve settings for '${name}'. File format not supported!` );
+        if ( exts.length === 0 ) throw new Error( `Cannot retrieve settings for '${name}'. File format not supported!` );
       } )
     );
 

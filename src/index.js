@@ -1,5 +1,12 @@
 import R from 'ramda';
-import { first, flatMap, ignoreElements, map, share, tap } from 'rxjs/operators';
+import {
+  first,
+  flatMap,
+  ignoreElements,
+  map,
+  share,
+  tap
+} from 'rxjs/operators';
 import { PluginSystem } from 'reactive-plugin-system';
 
 import getBasicOperators from './basic-operators';

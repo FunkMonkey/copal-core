@@ -1,4 +1,9 @@
-import { filter, map, startWith, tap } from 'rxjs/operators';
+import {
+  filter,
+  map,
+  startWith,
+  tap
+} from 'rxjs/operators';
 
 function makeOperator( rxOp ) {
   return ( [ source$ ], nodeConfig ) => source$.pipe( rxOp( ...( nodeConfig.args || [] ) ) );
